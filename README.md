@@ -6,10 +6,10 @@
 
 ## 安装 / Install
 
-    在pubspec.yaml的对应位置添加依赖
-    Add dependency to pubspec.yaml
+在pubspec.yaml的对应位置添加依赖
+Add dependency to pubspec.yaml
 
-    ```
-    dependencies:
-      draggable_container: any
-    ```
+```yaml
+dependencies:
+  draggable_container: any
+```
