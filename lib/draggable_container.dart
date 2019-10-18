@@ -2,6 +2,7 @@ library flutter_draggable_container;
 
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -29,14 +30,14 @@ abstract class StageEvent {
 }
 
 mixin StageDragEventMixin<T extends StatefulWidget> on State<T>
-    implements StageEvent {}
+implements StageEvent {}
 
 abstract class StageItemsEvent {
   deleteItem(StageItemWidget widget);
 }
 
 mixin StageItemsEventMixin<T extends StatefulWidget> on State<T>
-    implements StageItemsEvent {}
+implements StageItemsEvent {}
 
 class Stage extends StatefulWidget {
   final Size itemSize;
@@ -52,15 +53,15 @@ class Stage extends StatefulWidget {
 
   Stage(
       {Key key,
-      @required this.children,
-      this.itemSize = const Size(100, 100),
-      this.margin,
-      this.slotDecoration,
-      this.dragDecoration,
-      this.onChanged,
-      this.onEditModeChanged,
-      this.autoTrim,
-      this.deleteButton})
+        @required this.children,
+        this.itemSize = const Size(100, 100),
+        this.margin,
+        this.slotDecoration,
+        this.dragDecoration,
+        this.onChanged,
+        this.onEditModeChanged,
+        this.autoTrim,
+        this.deleteButton})
       : super(key: key);
 
   @override
@@ -71,9 +72,12 @@ class _StageState extends State<Stage>
     with StageDragEventMixin, StageItemsEventMixin {
   final GlobalKey _containerKey = GlobalKey();
   final List<StageItemWidget> items = [];
-  final List<StageAnimationWidget> animations = [];
   final Map<StageSlot, StageItemWidget> relationShips = {};
+  final List<StageItemWidget> dragBefore = [], dragEnd = [];
+
   bool editMode = false;
+  StageItemWidget _pickUp;
+  StageSlot _fromSlot;
 
   @override
   void initState() {
@@ -85,7 +89,7 @@ class _StageState extends State<Stage>
     print('initItems');
     relationShips.clear();
     final RenderBox renderBoxRed =
-        _containerKey.currentContext.findRenderObject();
+    _containerKey.currentContext.findRenderObject();
     final size = renderBoxRed.size;
     print('size $size');
     EdgeInsets margin = widget.margin ?? EdgeInsets.all(0);
@@ -94,7 +98,7 @@ class _StageState extends State<Stage>
       final item = widget.children[i];
       final Offset position = Offset(x, y),
           maxPosition =
-              Offset(x + widget.itemSize.width, y + widget.itemSize.height);
+          Offset(x + widget.itemSize.width, y + widget.itemSize.height);
       final slot = StageSlot(
         position: position,
         width: widget.itemSize.width,
@@ -111,8 +115,7 @@ class _StageState extends State<Stage>
         height: widget.itemSize.height,
         decoration: widget.dragDecoration,
         deleteButton: widget.deleteButton,
-        beginPosition: position,
-        maxPosition: maxPosition,
+        position: position,
       );
       items.add(itemWidget);
       relationShips[slot] = itemWidget;
@@ -176,15 +179,12 @@ class _StageState extends State<Stage>
     return null;
   }
 
-  StageItemWidget _pickUp;
-  StageSlot _fromSlot;
-  bool hasChanged;
-
   onPanStart(DragStartDetails details) {
     if (!editMode) return;
     final StageItemWidget item = findItem(details.localPosition);
     final StageSlot slot = findSlot(details.localPosition);
-    hasChanged = false;
+    dragBefore.clear();
+    dragBefore.addAll(relationShips.values);
     if (item != null && item.item.fixed == false) {
       print('onPanStart');
       _pickUp = item;
@@ -209,9 +209,10 @@ class _StageState extends State<Stage>
         _toSlot = slot;
         if (_toSlot != _fromSlot) {
           final item = relationShips[_toSlot];
-          // 锁住了，不能移动
-          if (item != null && item.item.fixed) {
+          // 槽为空 或 锁住不能移动
+          if (item == null || item.item.fixed) {
             _toSlot = _fromSlot;
+            _pickUp.position = _toSlot.position;
             return;
           }
           final from = slots.indexOf(_fromSlot), to = slots.indexOf(_toSlot);
@@ -244,13 +245,13 @@ class _StageState extends State<Stage>
               print('从 $s 到 $e');
 
               relationShips[slotS] = itemE;
-              if (itemS != _pickUp) {
+              if (itemS != _pickUp && itemS != null) {
                 print('$s');
                 itemS.position = slotE.position;
               }
 
               relationShips[slotE] = itemS;
-              if (itemE != _pickUp) {
+              if (itemE != _pickUp && itemE != null) {
                 print('$e');
                 itemE.position = slotS.position;
               }
@@ -273,24 +274,37 @@ class _StageState extends State<Stage>
       _pickUp.isDragging = false;
       _pickUp.position = _toSlot.position;
       _pickUp = _fromSlot = _toSlot = null;
-      _triggerOnChanged();
-      setState(() {});
+      // 有变化
+      if (listEquals<StageItemWidget>(
+          dragBefore, relationShips.values.toList()) ==
+          false) _triggerOnChanged();
     }
   }
 
-  onLongPressStart(_) {
+  onLongPressStart(LongPressStartDetails details) {
     if (editMode == false) {
       print('进入编辑模式');
       editMode = true;
       HapticFeedback.lightImpact();
       if (widget.onEditModeChanged != null) widget.onEditModeChanged(editMode);
       items.forEach((item) => item.editMode = true);
-//      onPanStart(null);
+      longPressPosition = details.localPosition;
+      onPanStart(DragStartDetails(localPosition: details.localPosition));
     }
   }
 
+  Offset longPressPosition;
+
   onLongPressMoveUpdate(LongPressMoveUpdateDetails details) {
-    print('$details');
+    onPanUpdate(DragUpdateDetails(
+        globalPosition: details.globalPosition,
+        delta: details.localPosition - longPressPosition,
+        localPosition: details.localPosition));
+    longPressPosition = details.localPosition;
+  }
+
+  onLongPressEnd(_) {
+    onPanCancel();
   }
 
   @override
@@ -304,6 +318,7 @@ class _StageState extends State<Stage>
           onPanEnd: onPanEnd,
           onLongPressStart: onLongPressStart,
           onLongPressMoveUpdate: onLongPressMoveUpdate,
+          onLongPressEnd: onLongPressEnd,
           child: WillPopScope(
             onWillPop: () async {
               if (editMode) {
@@ -318,7 +333,7 @@ class _StageState extends State<Stage>
             },
             child: Stack(
               key: _containerKey,
-              children: [...relationShips.keys, ...items, ...animations],
+              children: [...relationShips.keys, ...items],
             ),
           ),
         ),
@@ -327,71 +342,6 @@ class _StageState extends State<Stage>
   }
 
   StageSlot _toSlot;
-}
-
-class StageAnimationWidget extends StatefulWidget {
-  final Widget child;
-  final double x, y, width, height;
-  final double targetX, targetY;
-  final Function(StageAnimationWidget) finish;
-
-  StageAnimationWidget({
-    Key key,
-    @required this.x,
-    @required this.y,
-    @required this.targetX,
-    @required this.targetY,
-    @required this.child,
-    @required this.finish,
-    this.width,
-    this.height,
-  }) : super(key: key);
-
-  @override
-  StageAnimationWidgetState createState() => StageAnimationWidgetState();
-}
-
-class StageAnimationWidgetState extends State<StageAnimationWidget>
-    with SingleTickerProviderStateMixin {
-  final Tween<double> x = Tween<double>(), y = Tween<double>();
-  AnimationController controller;
-
-  @override
-  void initState() {
-    super.initState();
-    controller =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 300));
-    controller.addListener(() {
-      setState(() {});
-    });
-    this.x.begin = widget.x;
-    this.y.begin = widget.y;
-    this.x.end = widget.targetX;
-    this.y.end = widget.targetY;
-    controller.forward().then((_) => widget.finish(widget));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      left: x.evaluate(controller),
-      top: y.evaluate(controller),
-      width: widget.width,
-      height: widget.height,
-      child: Container(
-        child: widget.child,
-        color: Colors.blue.withOpacity(0.5),
-        width: widget.width,
-        height: widget.height,
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-  }
 }
 
 class StageSlot extends StatefulWidget {
@@ -405,12 +355,12 @@ class StageSlot extends StatefulWidget {
 
   const StageSlot(
       {Key key,
-      this.width,
-      this.height,
-      this.decoration,
-      this.position,
-      this.maxPosition,
-      this.event})
+        this.width,
+        this.height,
+        this.decoration,
+        this.position,
+        this.maxPosition,
+        this.event})
       : super(key: key);
 
   @override
@@ -443,25 +393,29 @@ abstract class ItemWidgetEvent {
 }
 
 mixin ItemWidgetEventMixin<T extends StatefulWidget> on State<T>
-    implements ItemWidgetEvent {}
+implements ItemWidgetEvent {}
 
 class StageItemWidget extends StatefulWidget {
   final StageItem item;
   final double width, height;
   final BoxDecoration decoration;
-  final Offset maxPosition;
   final StageItemsEvent stage;
   final Widget deleteButton;
-  Offset beginPosition;
+  Offset _beginPosition, _maxPosition;
   _StageItemWidgetState _state;
 
   get position => _state.position;
 
-  set position(Offset position) => _state.updatePosition(position);
+  set position(Offset position) {
+    _state.updatePosition(position);
+    _maxPosition = _state.position + Offset(width, height);
+  }
 
   set editMode(bool value) => _state.updateEditMode(value);
 
   set isDragging(bool isActive) => _state.updateActive(isActive);
+
+  get maxPosition => this._maxPosition;
 
   StageItemWidget({
     Key key,
@@ -469,11 +423,13 @@ class StageItemWidget extends StatefulWidget {
     this.width,
     this.height,
     this.decoration,
-    this.beginPosition,
-    this.maxPosition,
+    Offset position,
     this.stage,
     this.deleteButton,
-  }) : super(key: key);
+  }) : super(key: key) {
+    this._beginPosition = position;
+    this._maxPosition = position + Offset(width, height);
+  }
 
   @override
   _StageItemWidgetState createState() => _StageItemWidgetState();
@@ -488,13 +444,7 @@ class _StageItemWidgetState extends State<StageItemWidget> {
   void initState() {
     super.initState();
     widget._state = this;
-    updatePosition(widget.beginPosition);
-  }
-
-  @override
-  void didUpdateWidget(StageItemWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget._state == null) widget._state = this;
+    updatePosition(widget._beginPosition);
   }
 
   @override
