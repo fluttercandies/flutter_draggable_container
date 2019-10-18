@@ -1,5 +1,7 @@
 name: draggable_container
-description: A Draggable Widget Container.
+description:
+  A Draggable Widget Container.
+  Draggable, Deletable, Fixable.
 version: 0.0.1
 author: gzlock <gzlock88@gmail.com>
 homepage: https://github.com/gzlock/flutter_draggable_container

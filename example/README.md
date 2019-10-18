@@ -81,7 +81,7 @@ class _AppState extends State<App> {
               child: RaisedButton.icon(
                   color: Colors.blue,
                   onPressed: () {
-                    print('点击了锁定');
+                    print('Clicked a button');
                   },
                   textColor: Colors.white,
                   icon: Icon(
