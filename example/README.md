@@ -19,27 +19,15 @@ void main() =>
 class MyItem extends StageItem {
   final int index;
   final String key;
-  Widget child, deleteButton;
+  final Function onTap;
+  Widget child;
 
-  MyItem(this.key, this.index) {
+  MyItem(this.key, this.index, this.onTap) {
     this.child = GestureDetector(
-      onTap: () => print('tap $index'),
+      onTap: () => onTap(),
       child: Container(
         color: randomColor(),
-        child: Text(index.toString()),
-      ),
-    );
-    this.deleteButton = Container(
-      width: 14,
-      height: 14,
-      decoration: BoxDecoration(
-        color: Colors.red,
-        borderRadius: BorderRadius.all(Radius.circular(8)),
-      ),
-      child: Icon(
-        Icons.clear,
-        size: 14,
-        color: Colors.white,
+        child: Center(child: Text(index.toString())),
       ),
     );
   }
@@ -52,14 +40,20 @@ class MyItem extends StageItem {
   }
 }
 
-class App extends StatefulWidget {
-  _AppState createState() => _AppState();
-}
+class DemoWidget extends StatelessWidget {
+  GlobalKey<ScaffoldState> _key = GlobalKey();
 
-class _AppState extends State<App> {
+  void showSnackBar(String text) {
+    _key.currentState.hideCurrentSnackBar();
+    _key.currentState.showSnackBar(SnackBar(
+      content: Text(text),
+    ));
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Draggable Container Demo')),
+      key: _key,
+      appBar: AppBar(title: Text('Re-entry will reset')),
       body: Column(children: <Widget>[
         Stage(
           // slot decoration
@@ -72,16 +66,33 @@ class _AppState extends State<App> {
               boxShadow: [BoxShadow(color: Colors.black, blurRadius: 10)]),
           // item size
           itemSize: Size(100, 100),
+          deleteButton: Container(
+            width: 14,
+            height: 14,
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+            ),
+            child: Icon(
+              Icons.clear,
+              size: 14,
+              color: Colors.white,
+            ),
+          ),
           // item list
           children: [
-            ...List.generate(8, (i) => MyItem('item $i', i)),
+            ...List.generate(
+                8,
+                (i) => MyItem('item $i', i, () {
+                      showSnackBar('Clicked the ${i}th item');
+                    })),
             StageItem(
               fixed: true,
               deletable: false,
               child: RaisedButton.icon(
                   color: Colors.blue,
                   onPressed: () {
-                    print('Clicked a button');
+                    showSnackBar('Clicked the fixed item');
                   },
                   textColor: Colors.white,
                   icon: Icon(
@@ -93,7 +104,11 @@ class _AppState extends State<App> {
           ],
           onChanged: (items) {
             final res = items.where((item) => item is MyItem).toList();
-            print('onChanged\nstring: $res\njson: ${json.encode(res)}');
+            showSnackBar('Items Changed\njson: ${json.encode(res)}');
+          },
+          onEditModeChanged: (bool editMode) {
+            if (editMode) return showSnackBar('Enter edit mode');
+            showSnackBar('Exit edit mode');
           },
         ),
       ]),
