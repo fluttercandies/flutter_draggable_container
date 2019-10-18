@@ -104,7 +104,7 @@ class DemoWidget extends StatelessWidget {
           ],
           onChanged: (items) {
             final res = items.where((item) => item is MyItem).toList();
-            showSnackBar('Items Changed\njson: ${json.encode(res)}');
+            showSnackBar('Items Changed\nraw: $items\njson: ${json.encode(res)}');
           },
           onEditModeChanged: (bool editMode) {
             if (editMode) return showSnackBar('Enter edit mode');

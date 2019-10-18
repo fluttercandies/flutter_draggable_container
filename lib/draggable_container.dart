@@ -40,9 +40,9 @@ mixin StageItemsEventMixin<T extends StatefulWidget> on State<T>
 implements StageItemsEvent {}
 
 class Stage extends StatefulWidget {
-  final Size itemSize;
+  final Size slotSize;
 
-  final EdgeInsets margin;
+  final EdgeInsets slotMargin;
 
   final List<StageItem> children;
   final BoxDecoration slotDecoration, dragDecoration;
@@ -50,18 +50,27 @@ class Stage extends StatefulWidget {
   final Function(bool editMode) onEditModeChanged;
   final bool autoTrim;
   final Widget deleteButton;
+  final Offset deleteButtonPosition;
+  final Duration animateDuration;
 
   Stage(
       {Key key,
         @required this.children,
-        this.itemSize = const Size(100, 100),
-        this.margin,
+        this.slotSize = const Size(100, 100),
+        this.slotMargin,
         this.slotDecoration,
         this.dragDecoration,
         this.onChanged,
         this.onEditModeChanged,
-        this.autoTrim,
-        this.deleteButton})
+
+        /// When true, when delete a item,
+        /// the remaining items will automatically fill the empty slot
+        this.autoTrim: true,
+
+        /// The children widget position animate duration
+        this.animateDuration: const Duration(milliseconds: 200),
+        this.deleteButton,
+        this.deleteButtonPosition: const Offset(0, 0)})
       : super(key: key);
 
   @override
@@ -72,7 +81,7 @@ class _StageState extends State<Stage>
     with StageDragEventMixin, StageItemsEventMixin {
   final GlobalKey _containerKey = GlobalKey();
   final List<StageItemWidget> items = [];
-  final Map<StageSlot, StageItemWidget> relationShips = {};
+  final Map<StageSlot, StageItemWidget> relationship = {};
   final List<StageItemWidget> dragBefore = [], dragEnd = [];
 
   bool editMode = false;
@@ -85,24 +94,26 @@ class _StageState extends State<Stage>
     WidgetsBinding.instance.addPostFrameCallback(initItems);
   }
 
+  void addItem(StageItem item) {}
+
   void initItems(_) {
-    print('initItems');
-    relationShips.clear();
+//    print('initItems');
+    relationship.clear();
     final RenderBox renderBoxRed =
     _containerKey.currentContext.findRenderObject();
     final size = renderBoxRed.size;
-    print('size $size');
-    EdgeInsets margin = widget.margin ?? EdgeInsets.all(0);
+//    print('size $size');
+    EdgeInsets margin = widget.slotMargin ?? EdgeInsets.all(0);
     double x = margin.left, y = margin.top;
     for (var i = 0; i < widget.children.length; i++) {
       final item = widget.children[i];
       final Offset position = Offset(x, y),
           maxPosition =
-          Offset(x + widget.itemSize.width, y + widget.itemSize.height);
+          Offset(x + widget.slotSize.width, y + widget.slotSize.height);
       final slot = StageSlot(
         position: position,
-        width: widget.itemSize.width,
-        height: widget.itemSize.height,
+        width: widget.slotSize.width,
+        height: widget.slotSize.height,
         decoration: widget.slotDecoration,
         maxPosition: maxPosition,
         event: this,
@@ -111,18 +122,20 @@ class _StageState extends State<Stage>
         key: UniqueKey(),
         stage: this,
         item: item,
-        width: widget.itemSize.width,
-        height: widget.itemSize.height,
+        width: widget.slotSize.width,
+        height: widget.slotSize.height,
         decoration: widget.dragDecoration,
         deleteButton: widget.deleteButton,
+        deleteButtonPosition: widget.deleteButtonPosition,
         position: position,
+        animateDuration: widget.animateDuration,
       );
       items.add(itemWidget);
-      relationShips[slot] = itemWidget;
-      x += widget.itemSize.width + margin.right;
-      if (x + widget.itemSize.width + margin.right > size.width) {
+      relationship[slot] = itemWidget;
+      x += widget.slotSize.width + margin.right;
+      if (x + widget.slotSize.width + margin.right > size.width) {
         x = margin.left;
-        y += widget.itemSize.height + margin.bottom + margin.top;
+        y += widget.slotSize.height + margin.bottom + margin.top;
       }
     }
     setState(() {});
@@ -131,20 +144,26 @@ class _StageState extends State<Stage>
   @override
   deleteItem(StageItemWidget widget) {
     if (this.widget.children.contains(widget.item)) {
-      final slots = relationShips.keys;
-      final index = relationShips.values.toList().indexOf(widget);
       this.widget.children.remove(widget.item);
       this.items.remove(widget);
-      for (var i = index; i < slots.length - 1; i++) {
-        final slot = slots.elementAt(i), nextSlot = slots.elementAt(i + 1);
-        final item = relationShips[slot], nextItem = relationShips[nextSlot];
-        if (item != null && item.item.fixed) continue;
-        if (nextItem != null && nextItem.item.fixed) continue;
-        relationShips[slot] = relationShips[nextSlot];
-        relationShips[nextSlot] = null;
-        if (relationShips[slot] == null) continue;
-        relationShips[slot].position = slot.position;
+      final slots = relationship.keys;
+      final index = relationship.values.toList().indexOf(widget);
+      if (this.widget.autoTrim) {
+        for (var i = index; i < slots.length - 1; i++) {
+          final slot = slots.elementAt(i), nextSlot = slots.elementAt(i + 1);
+          final nextItem = relationship[nextSlot];
+          if (nextItem != null && nextItem.item.fixed) {
+            relationship[slot] = null;
+            break;
+          }
+          relationship[slot] = relationship[nextSlot];
+          if (relationship[slot] == null) continue;
+          relationship[slot].position = slot.position;
+        }
+      } else {
+        relationship[slots.elementAt(index)] = null;
       }
+
       setState(() {});
       _triggerOnChanged();
     }
@@ -152,14 +171,15 @@ class _StageState extends State<Stage>
 
   _triggerOnChanged() {
     if (widget.onChanged != null)
-      widget.onChanged(relationShips.values
-          .where((widget) => widget != null)
-          .map((widget) => widget.item)
+      widget.onChanged(relationship.keys
+//          .where((widget) => widget != null)
+          .map((key) =>
+      relationship[key] == null ? null : relationship[key].item)
           .toList());
   }
 
   StageSlot findSlot(Offset position) {
-    final keys = relationShips.keys.toList();
+    final keys = relationship.keys.toList();
     for (var i = 0; i < keys.length; i++) {
       final StageSlot slot = keys[i];
       if (slot.position <= position && slot.maxPosition >= position) {
@@ -184,9 +204,9 @@ class _StageState extends State<Stage>
     final StageItemWidget item = findItem(details.localPosition);
     final StageSlot slot = findSlot(details.localPosition);
     dragBefore.clear();
-    dragBefore.addAll(relationShips.values);
+    dragBefore.addAll(relationship.values);
     if (item != null && item.item.fixed == false) {
-      print('onPanStart');
+//      print('onPanStart');
       _pickUp = item;
       _fromSlot = _toSlot = slot;
       items.remove(_pickUp);
@@ -197,7 +217,7 @@ class _StageState extends State<Stage>
   }
 
   onPanUpdate(DragUpdateDetails details) {
-    final slots = relationShips.keys.toList();
+    final slots = relationship.keys.toList();
     if (_pickUp != null) {
 //      print('panUpdate');
       // 移动抓起的item
@@ -208,21 +228,20 @@ class _StageState extends State<Stage>
         if (_toSlot == slot) return;
         _toSlot = slot;
         if (_toSlot != _fromSlot) {
-          final item = relationShips[_toSlot];
+          final item = relationship[_toSlot];
           // 槽为空 或 锁住不能移动
           if (item == null || item.item.fixed) {
             _toSlot = _fromSlot;
-            _pickUp.position = _toSlot.position;
             return;
           }
           final from = slots.indexOf(_fromSlot), to = slots.indexOf(_toSlot);
           final start = math.min(from, to), end = math.max(from, to);
 
           if ((end - start == 1) && item != _pickUp) {
-            print('两个交换');
+//            print('两个交换');
             item.position = _fromSlot.position;
-            relationShips[_fromSlot] = item;
-            relationShips[_toSlot] = _pickUp;
+            relationship[_fromSlot] = item;
+            relationship[_toSlot] = _pickUp;
             _toSlot = _fromSlot;
             _fromSlot = slot;
             setState(() {});
@@ -235,24 +254,24 @@ class _StageState extends State<Stage>
             }
             indexes.add(end);
 
-            print('${slots.indexOf(_fromSlot)} 需要移动的槽 $indexes');
+//            print('${slots.indexOf(_fromSlot)} 需要移动的槽 $indexes');
             for (var i = 0; i < indexes.length - 1; i++) {
               final s = indexes[i], e = indexes[i + 1];
               final slotS = slots[s],
                   slotE = slots[e],
-                  itemS = relationShips[slotS],
-                  itemE = relationShips[slotE];
-              print('从 $s 到 $e');
+                  itemS = relationship[slotS],
+                  itemE = relationship[slotE];
+//              print('从 $s 到 $e');
 
-              relationShips[slotS] = itemE;
+              relationship[slotS] = itemE;
               if (itemS != _pickUp && itemS != null) {
-                print('$s');
+//                print('$s');
                 itemS.position = slotE.position;
               }
 
-              relationShips[slotE] = itemS;
+              relationship[slotE] = itemS;
               if (itemE != _pickUp && itemE != null) {
-                print('$e');
+//                print('$e');
                 itemE.position = slotS.position;
               }
             }
@@ -270,20 +289,20 @@ class _StageState extends State<Stage>
 
   onPanCancel() {
     if (_pickUp != null) {
-      print('onPanCancel');
+//      print('onPanCancel');
       _pickUp.isDragging = false;
       _pickUp.position = _toSlot.position;
       _pickUp = _fromSlot = _toSlot = null;
       // 有变化
       if (listEquals<StageItemWidget>(
-          dragBefore, relationShips.values.toList()) ==
+          dragBefore, relationship.values.toList()) ==
           false) _triggerOnChanged();
     }
   }
 
   onLongPressStart(LongPressStartDetails details) {
     if (editMode == false) {
-      print('进入编辑模式');
+//      print('进入编辑模式');
       editMode = true;
       HapticFeedback.lightImpact();
       if (widget.onEditModeChanged != null) widget.onEditModeChanged(editMode);
@@ -323,7 +342,7 @@ class _StageState extends State<Stage>
             onWillPop: () async {
               if (editMode) {
                 editMode = false;
-                print('退出编辑模式');
+//                print('退出编辑模式');
                 items.forEach((item) => item.editMode = false);
                 if (widget.onEditModeChanged != null)
                   widget.onEditModeChanged(editMode);
@@ -333,7 +352,7 @@ class _StageState extends State<Stage>
             },
             child: Stack(
               key: _containerKey,
-              children: [...relationShips.keys, ...items],
+              children: [...relationship.keys, ...items],
             ),
           ),
         ),
@@ -395,12 +414,15 @@ abstract class ItemWidgetEvent {
 mixin ItemWidgetEventMixin<T extends StatefulWidget> on State<T>
 implements ItemWidgetEvent {}
 
+// ignore: must_be_immutable
 class StageItemWidget extends StatefulWidget {
   final StageItem item;
   final double width, height;
   final BoxDecoration decoration;
   final StageItemsEvent stage;
   final Widget deleteButton;
+  final Offset deleteButtonPosition;
+  final Duration animateDuration;
   Offset _beginPosition, _maxPosition;
   _StageItemWidgetState _state;
 
@@ -426,6 +448,8 @@ class StageItemWidget extends StatefulWidget {
     Offset position,
     this.stage,
     this.deleteButton,
+    this.animateDuration,
+    this.deleteButtonPosition,
   }) : super(key: key) {
     this._beginPosition = position;
     this._maxPosition = position + Offset(width, height);
@@ -436,6 +460,7 @@ class StageItemWidget extends StatefulWidget {
 }
 
 class _StageItemWidgetState extends State<StageItemWidget> {
+  final zeroDuration = Duration.zero;
   double x, y;
   bool editMode = false;
   bool active = false;
@@ -449,14 +474,15 @@ class _StageItemWidgetState extends State<StageItemWidget> {
 
   @override
   Widget build(BuildContext context) {
-    print('itemWidget build');
+//    print('itemWidget build');
     final children = <Widget>[
       Container(
         decoration: active ? widget.decoration : null,
         width: widget.width,
         height: widget.height,
         child: IgnorePointer(
-          ignoring: editMode && widget.deleteButton != null,
+          ignoring: editMode &&
+              (widget.item.deletable == true && widget.item.fixed == false),
           ignoringSemantics: editMode,
           child: widget.item.child,
         ),
@@ -467,8 +493,8 @@ class _StageItemWidgetState extends State<StageItemWidget> {
         throw Exception('The deletable item need the delete button');
       } else {
         children.add(Positioned(
-          right: 0,
-          top: 0,
+          right: widget.deleteButtonPosition.dx,
+          top: widget.deleteButtonPosition.dy,
           child: GestureDetector(
             onTap: () {
               widget.stage.deleteItem(widget);
@@ -478,9 +504,10 @@ class _StageItemWidgetState extends State<StageItemWidget> {
         ));
       }
     }
-    return Positioned(
+    return AnimatedPositioned(
       left: x,
       top: y,
+      duration: active ? zeroDuration : widget.animateDuration,
       width: widget.width,
       height: widget.height,
       child: Stack(children: children),

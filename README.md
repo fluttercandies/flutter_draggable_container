@@ -1,15 +1,26 @@
-# 可以拖动子项目的容器部件 / A Draggable Widget Container 
+# 可以拖动子部件的容器部件 / A Draggable Widget Container 
 
-## 可拖动子项目，可删除子项目，可以固定子项目位置 / Draggable, Deletable, Fixable.
+## 可拖动子部件，可删除子部件，可以固定子部件位置 / Draggable, Deletable, Fixable.
 
 ## 一些截图 / Screenshots
 
-## 安装 / Install
 
-在pubspec.yaml的对应位置添加依赖
-Add dependency to pubspec.yaml
+### 模式 / Mode
 
-```yaml
-dependencies:
-  draggable_container: any
-```
+- 正常模式 / Normal Mode:
+    - 不拦截子部件的手势事件
+    - Do not intercept the GestureDetector events of the child widget
+    - 不能拖动和删除子部件
+    - Can't drag and delete the children widget
+    
+- 编辑模式 / Edit mode:
+    - 长按子部件进入编辑模式
+    - Long press the children widget to enter edit mode
+    - 在可删除子部件上显示删除按钮
+    - Show the delete button on the deletable child widget
+    - 拦截可拖动可删除的子部件的手势事件
+    - Intercept the GestureDetector events of the draggable and deletable child widget
+    - 可以拖动和删除子部件
+    - Can drag and delete the children widget
+    - 返回键 退出编辑模式
+    - Press the Back key to exit edit mode.
