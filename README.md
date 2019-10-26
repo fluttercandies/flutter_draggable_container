@@ -1,9 +1,11 @@
-# 可以拖动子部件的容器部件 / A Draggable Widget Container 
+# 可以拖动子部件的容器部件
+# A Draggable Widget Container 
 
-## 可拖动子部件，可删除子部件，可以固定子部件位置 / Draggable, Deletable, Fixable.
+## 可拖动子部件，可删除子部件，可以固定子部件位置
+## Each children is draggable, deletable, fixable.
 
 ## 一些截图 / Screenshots
-
+todo
 
 ### 模式 / Mode
 
@@ -16,6 +18,9 @@
 - 编辑模式 / Edit mode:
     - 长按子部件进入编辑模式
     - Long press the children widget to enter edit mode
+    - 进入编辑模式后，不再需要长按来拖动子部件，直接拖动就可以了
+    - In edit mode, do not need to long press to drag the children widget
+      just drag it.
     - 在可删除子部件上显示删除按钮
     - Show the delete button on the deletable child widget
     - 拦截可拖动可删除的子部件的手势事件
