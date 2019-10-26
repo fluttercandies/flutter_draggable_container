@@ -229,7 +229,7 @@ class DraggableContainerState<T extends DraggableItem>
     relationship.entries.toList().getRange(start, end).firstWhere((pair) {
       return pair.value != null && !pair.value.item.fixed;
     }, orElse: () => null);
-    
+
     return res;
   }
 
