@@ -1,38 +1,9 @@
-import 'dart:math';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+
 import '../lib/draggable_container.dart';
-
-Color randomColor({int min = 150}) {
-  final random = Random.secure();
-  return Color.fromARGB(255, random.nextInt(255 - min) + min,
-      random.nextInt(255 - min) + min, random.nextInt(255 - min) + min);
-}
-
-class MyItem extends DraggableItem {
-  final int index;
-  final String key;
-  Widget child, deleteButton;
-  final Function onTap;
-
-  MyItem({this.key, this.index, this.onTap}) {
-    this.child = GestureDetector(
-      onTap: () => onTap(),
-      child: Container(
-        color: randomColor(),
-        child: Center(child: Text(index.toString())),
-      ),
-    );
-  }
-
-  @override
-  String toString() => index.toString();
-
-  Map<String, dynamic> toJson() {
-    return {key: index};
-  }
-}
+import 'utils.dart';
 
 // ignore: must_be_immutable
 class DemoWidget2 extends StatelessWidget {
@@ -49,15 +20,11 @@ class DemoWidget2 extends StatelessWidget {
           child: RaisedButton.icon(
               color: Colors.orange,
               onPressed: () {
-                final success = _containerKey.currentState
-                    .addItem(MyItem(key: _count.toString(), index: _count));
-                if (success == false) {
-                  _containerKey.currentState
-                      .deleteItem(_addButton, triggerEvent: false);
-                  _containerKey.currentState
-                      .addItem(MyItem(key: _count.toString(), index: _count));
-                }
-                _count++;
+                _containerKey.currentState
+                    .deleteItem(_addButton, triggerEvent: false);
+                if (_containerKey.currentState
+                    .addItem(MyItem(key: _count.toString(), index: _count)))
+                  _count++;
               },
               textColor: Colors.white,
               icon: Icon(Icons.add_box, size: 20),
@@ -74,8 +41,9 @@ class DemoWidget2 extends StatelessWidget {
 
   Widget build(BuildContext context) {
     final items = [
-      ...List.generate(8, (i) => null),
+      MyItem(index: 111),
       _addButton,
+      ...List.generate(7, (i) => null),
     ];
     return Scaffold(
       key: _key,
@@ -86,7 +54,7 @@ class DemoWidget2 extends StatelessWidget {
           height: 330,
           child: DraggableContainer(
             key: _containerKey,
-//              draggableMode: true,
+            draggableMode: true,
             autoReorder: true,
 //              allWayUseLongPress: true,
             // slot decoration
@@ -105,9 +73,12 @@ class DemoWidget2 extends StatelessWidget {
               final finalItems = items.where((item) => item is MyItem).toList();
               showSnackBar(
                   'Items changed\nraw: $items\njson: ${json.encode(finalItems)}');
-              if (finalItems.length == 8)
+              final index = items.indexOf(null);
+              _containerKey.currentState.deleteItem(_addButton);
+              if (index != -1 &&
+                  _containerKey.currentState.hasItem(_addButton) == false)
                 _containerKey.currentState
-                    .addItem(_addButton, triggerEvent: false);
+                    .insteadOfIndex(index, _addButton, triggerEvent: false);
             },
           ),
         ),

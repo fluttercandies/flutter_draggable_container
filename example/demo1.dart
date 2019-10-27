@@ -1,38 +1,9 @@
-import 'dart:math';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+
 import '../lib/draggable_container.dart';
-
-Color randomColor({int min = 150}) {
-  final random = Random.secure();
-  return Color.fromARGB(255, random.nextInt(255 - min) + min,
-      random.nextInt(255 - min) + min, random.nextInt(255 - min) + min);
-}
-
-class MyItem extends DraggableItem {
-  final int index;
-  final String key;
-  Widget child, deleteButton;
-  final Function onTap;
-
-  MyItem({this.key, this.index, this.onTap}) {
-    this.child = GestureDetector(
-      onTap: () => onTap(),
-      child: Container(
-        color: randomColor(),
-        child: Center(child: Text(index.toString())),
-      ),
-    );
-  }
-
-  @override
-  String toString() => index.toString();
-
-  Map<String, dynamic> toJson() {
-    return {key: index};
-  }
-}
+import 'utils.dart';
 
 class DemoWidget extends StatelessWidget {
   final GlobalKey<ScaffoldState> _key = GlobalKey();
@@ -47,14 +18,13 @@ class DemoWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = [
       ...List.generate(
-        4,
-        (i) => MyItem(
-            key: 'item $i',
-            index: i,
-            onTap: () {
-              showSnackBar('Clicked the ${i}th item');
-            })
-      ),
+          4,
+          (i) => MyItem(
+              key: 'item $i',
+              index: i,
+              onTap: () {
+                showSnackBar('Clicked the ${i}th item');
+              })),
       DraggableItem(
         fixed: true,
         deletable: false,

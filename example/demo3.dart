@@ -1,40 +1,7 @@
-import 'dart:math';
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
+
 import '../lib/draggable_container.dart';
-
-Color randomColor({int min = 150}) {
-  final random = Random.secure();
-  return Color.fromARGB(255, random.nextInt(255 - min) + min,
-      random.nextInt(255 - min) + min, random.nextInt(255 - min) + min);
-}
-
-enum ConfirmAction { CANCEL, ACCEPT }
-
-class MyItem extends DraggableItem {
-  final int index;
-  final String key;
-  Widget child, deleteButton;
-  final Function onTap;
-
-  MyItem({this.key, this.index, this.onTap}) {
-    this.child = GestureDetector(
-      onTap: () => onTap(),
-      child: Container(
-        color: randomColor(),
-        child: Center(child: Text(index.toString())),
-      ),
-    );
-  }
-
-  @override
-  String toString() => index.toString();
-
-  Map<String, dynamic> toJson() {
-    return {key: index};
-  }
-}
+import 'utils.dart';
 
 class DemoWidget3 extends StatefulWidget {
   @override
@@ -57,16 +24,8 @@ class _DemoWidget3 extends State<DemoWidget3> {
               color: Colors.orange,
               onPressed: () {
                 if (_containerKey.currentState
-                    .addItem(MyItem(key: _count.toString(), index: _count))) {
+                    .addItem(MyItem(key: _count.toString(), index: _count)))
                   _count++;
-                } else {
-                  showSnackBar(
-                      'It\'s full, remove this button and add the last item');
-                  _containerKey.currentState
-                      .deleteItem(_addButton);
-                  _containerKey.currentState
-                      .addItem(MyItem(key: _count.toString(), index: _count));
-                }
               },
               textColor: Colors.white,
               icon: Icon(
@@ -115,7 +74,7 @@ class _DemoWidget3 extends State<DemoWidget3> {
 
   Widget build(BuildContext context) {
     final items = [
-      ...List.generate(8, (i) => null),
+      ...List.generate(8, (i) => MyItem(index: i)),
       _addButton,
     ];
     return Scaffold(
@@ -142,19 +101,6 @@ class _DemoWidget3 extends State<DemoWidget3> {
             slotSize: Size(100, 100),
             // item list
             items: items,
-            onChanged: (items) {
-              final finalItems = items.where((item) => item is MyItem).toList();
-              showSnackBar(
-                  'Items changed\nraw: $items\njson: ${json.encode(finalItems)}');
-              if (finalItems.length == 8)
-                _containerKey.currentState
-                    .addItem(_addButton);
-            },
-            onDraggableModeChanged: (bool draggableMode) {
-              if (draggableMode)
-                return showSnackBar('Enter the draggable mode');
-              showSnackBar('Exit the draggable mode');
-            },
             onBeforeDelete: (int index, item) => _showDialog(index, item),
           ),
         ),

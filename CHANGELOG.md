@@ -1,17 +1,22 @@
+### [0.1.4+hotfix]
+
+Fixed some issues.
+
+Updated the example code.
+
 ### [0.1.4]
 
-fixed some issues.
+Fixed some issues.
 
 ### [0.1.3]
 
-fixed some issues.
+Fixed some issues.
 
 Add getItem(int index) method
 
 ### [0.1.2]
 
 Add insteadOfIndex(int index, DraggableItem item, {bool triggerEvent: true}) method
-
 
 ### [0.1.1]
 
@@ -37,10 +42,9 @@ Updated README.md
 
 Fixed long press to drag the item move faster than finger.
 
-Fixed deleted item error.
+Fixed some issue.
 
 Add the demo gif.
-
 
 ### [0.0.7]
 
