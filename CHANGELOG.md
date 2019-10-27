@@ -1,5 +1,6 @@
 ### [0.0.8]
 Fixed long press to drag the item move faster than finger.
+Fixed deleted item error.
 
 ### [0.0.7]
 
