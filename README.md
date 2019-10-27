@@ -5,11 +5,12 @@
 ## Each children is draggable, deletable, fixable.
 
 ## 截图 / Screenshots
-- ![demo 1](./demo1.gif)
 
-- ![demo 2](./demo2.gif)
+- ![demo 1](https://github.com/gzlock/images/raw/master/flutter_draggable_container/1.gif)
 
-- ![demo 3](./demo3.gif)
+- ![demo 2](https://github.com/gzlock/images/raw/master/flutter_draggable_container/2.gif)
+
+- ![demo 3](https://github.com/gzlock/images/raw/master/flutter_draggable_container/3.gif)
 
 ### 模式 / Mode
 
