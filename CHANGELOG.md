@@ -1,3 +1,6 @@
+### [0.0.8]
+Fixed long press to drag the item move faster than finger.
+
 ### [0.0.7]
 
 * All class names begin with Draggable
