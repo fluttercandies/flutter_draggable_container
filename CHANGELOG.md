@@ -1,6 +1,12 @@
+### [0.1.3]
+
+fixed some issues.
+
 ### [0.1.2]
 
 Add insteadOfIndex(int index, DraggableItem item, {bool triggerEvent: true}) method
+
+Add getItem(int index) method
 
 ### [0.1.1]
 

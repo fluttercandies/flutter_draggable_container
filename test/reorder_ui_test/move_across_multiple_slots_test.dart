@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../lib/draggable_container.dart';
-import 'utils.dart';
+import '../utils.dart';
 
 /// The items position
 ///

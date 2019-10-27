@@ -119,7 +119,7 @@ class DraggableContainerState<T extends DraggableItem>
   DraggableSlot toSlot;
   Offset longPressPosition;
 
-  List<T> get items => relationship.values.map((widget) => widget?.item);
+  get items => List.from(relationship.values.map((widget) => widget?.item));
 
   @override
   void initState() {
@@ -187,7 +187,6 @@ class DraggableContainerState<T extends DraggableItem>
       if (item == null) {
         relationship[slot] = null;
       } else {
-        print(i.toString());
         final itemWidget = _createItemWidget(item, position);
         layers.add(itemWidget);
         relationship[slot] = itemWidget;
@@ -237,11 +236,17 @@ class DraggableContainerState<T extends DraggableItem>
 
   bool insteadOfIndex(int index, T item, {bool triggerEvent: true}) {
     final slots = relationship.keys;
-    if (slots.length < index) return false;
+    if (index < 0 || slots.length < index) return false;
     relationship[slots.elementAt(index)] =
         _createItemWidget(item, slots.elementAt(index).position);
     if (triggerEvent) _triggerOnChanged();
+    reorder();
+    setState(() {});
     return true;
+  }
+
+  T getItem(int index) {
+    return relationship.values.elementAt(index)?.item;
   }
 
   Future<bool> _deleteFromWidget(DraggableItemWidget widget) async {
