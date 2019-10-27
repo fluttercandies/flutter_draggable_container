@@ -40,6 +40,7 @@ abstract class DraggableItemsEvent {
 mixin StageItemsEventMixin<T extends StatefulWidget> on State<T>
     implements DraggableItemsEvent {}
 
+// ignore: must_be_immutable
 class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
   final Size slotSize;
 
@@ -59,7 +60,7 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
   DraggableContainer({
     Key key,
     @required List<DraggableItem> items,
-    @required Widget deleteButton,
+    Widget deleteButton,
     this.slotSize = const Size(100, 100),
     this.slotMargin,
     this.slotDecoration,
@@ -146,9 +147,9 @@ class DraggableContainerState<T extends DraggableItem>
 
   bool addItem(T item, {bool triggerEvent: true}) {
     if (item == null) return false;
-    final entires = relationship.entries;
-    for (var i = 0; i < entires.length; i++) {
-      final kv = entires.elementAt(i);
+    final entries = relationship.entries;
+    for (var i = 0; i < entries.length; i++) {
+      final kv = entries.elementAt(i);
       if (kv.value == null) {
         final _widget = _createItemWidget(item, kv.key.position);
         relationship[kv.key] = _widget;
@@ -237,8 +238,9 @@ class DraggableContainerState<T extends DraggableItem>
   bool insteadOfIndex(int index, T item, {bool triggerEvent: true}) {
     final slots = relationship.keys;
     if (index < 0 || slots.length < index) return false;
-    relationship[slots.elementAt(index)] =
-        _createItemWidget(item, slots.elementAt(index).position);
+    final widget = _createItemWidget(item, slots.elementAt(index).position);
+    relationship[slots.elementAt(index)] = widget;
+    layers[index] = widget;
     if (triggerEvent) _triggerOnChanged();
     reorder();
     setState(() {});
