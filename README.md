@@ -5,7 +5,7 @@
 ## Each children is draggable, deletable, fixable.
 
 ## 一些截图 / Screenshots
-todo
+![demo gif](./demo.gif)
 
 ### 模式 / Mode
 
