@@ -235,6 +235,15 @@ class DraggableContainerState<T extends DraggableItem>
     return false;
   }
 
+  bool insteadOfIndex(int index, T item, {bool triggerEvent: true}) {
+    final slots = relationship.keys;
+    if (slots.length < index) return false;
+    relationship[slots.elementAt(index)] =
+        _createItemWidget(item, slots.elementAt(index).position);
+    if (triggerEvent) _triggerOnChanged();
+    return true;
+  }
+
   Future<bool> _deleteFromWidget(DraggableItemWidget widget) async {
     if (this.widget.onBeforeDelete != null) {
       bool isDelete = await this.widget.onBeforeDelete(

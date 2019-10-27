@@ -1,3 +1,7 @@
+### [0.1.2]
+
+Add insteadOfIndex(int index, DraggableItem item, {bool triggerEvent: true}) method
+
 ### [0.1.1]
 
 Updated README.md
