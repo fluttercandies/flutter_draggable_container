@@ -1,3 +1,6 @@
+### [0.0.9]
+Updated the code.
+
 ### [0.0.8]
 Fixed long press to drag the item move faster than finger.
 Fixed deleted item error.
@@ -16,14 +19,20 @@ Add the demo gif.
 
 * Use the tester to test the reorder logic.
     
-### [0.0.6] - Update the example code.
+### [0.0.6]
+Updated the example code.
 
-### [0.0.5] - Update code.
+### [0.0.5]
+Updated code.
 
-### [0.0.4] - Update the example code.
+### [0.0.4]
+Updated the example code.
 
-### [0.0.3] - Update code.
+### [0.0.3]
+Updated code.
 
-### [0.0.2] - Update the pubspec.yaml file and the example code.
+### [0.0.2]
+Updated the pubspec.yaml file and the example code.
 
-### [0.0.1] - init.
+### [0.0.1]
+init.

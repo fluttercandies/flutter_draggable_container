@@ -4,7 +4,7 @@
 ## 可拖动子部件，可删除子部件，可以固定子部件位置
 ## Each children is draggable, deletable, fixable.
 
-## 一些截图 / Screenshots
+## 截图 / Screenshots
 ![demo gif](./demo.gif)
 
 ### 模式 / Mode
@@ -15,11 +15,11 @@
     - 不能拖动和删除子部件
     - Can't drag and delete the children widget
     
-- 编辑模式 / Edit mode:
+- 编辑模式 / Draggable mode:
     - 长按子部件进入编辑模式
-    - Long press the children widget to enter edit mode
+    - Long press the children widget to enter the draggable mode
     - 进入编辑模式后，不再需要长按来拖动子部件，直接拖动就可以了
-    - In edit mode, do not need to long press to drag the children widget
+    - In the draggable mode, do not need to long press to drag the children widget,
       just drag it.
     - 在可删除子部件上显示删除按钮
     - Show the delete button on the deletable child widget
@@ -28,4 +28,12 @@
     - 可以拖动和删除子部件
     - Can drag and delete the children widget
     - 返回键 退出编辑模式
-    - Press the Back key to exit edit mode.
+    - Press the Back key to exit the draggable mode.
+    
+- 事件 / Events
+    - onChanged(List<T extends DraggableItem> items)
+        - 当子项目改变时触发(拖动过后，删除后)
+        - Trigger when the items changed(dragged, deleted)
+    - onDraggableModeChanged(bool mode)
+        - mode为true则进入了编辑模式，为false则退出了编辑模式.
+        - When mode is true then in the draggable mode. If false it mean exited the draggable mode.
