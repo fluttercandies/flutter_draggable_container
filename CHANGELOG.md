@@ -3,6 +3,7 @@ Fixed long press to drag the item move faster than finger.
 Fixed deleted item error.
 Add the demo gif.
 
+
 ### [0.0.7]
 
 * All class names begin with Draggable
