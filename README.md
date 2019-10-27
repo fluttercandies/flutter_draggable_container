@@ -5,7 +5,11 @@
 ## Each children is draggable, deletable, fixable.
 
 ## 截图 / Screenshots
-<img src="./demo1.gif" width="300" /><img src="./demo2.gif" width="300" /><img src="./demo3.gif" width="300" />
+- ![demo 1](./demo1.gif)
+
+- ![demo 2](./demo2.gif)
+
+- ![demo 3](./demo3.gif)
 
 ### 模式 / Mode
 
@@ -37,3 +41,6 @@
     - onDraggableModeChanged(bool mode)
         - mode为true则进入了编辑模式，为false则退出了编辑模式.
         - When mode is true then in the draggable mode. If false it mean exited the draggable mode.
+    - Future<bool> onBeforeDelete(int index, DraggableItem item)
+        - 删除item的确认事件，返回true删除，返回false不删除
+        - The event for confirm to delete a item, if return true then delete, if false then no action.

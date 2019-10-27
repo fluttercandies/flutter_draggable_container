@@ -8,6 +8,8 @@ Updated the example code.
 
 Updated the demo gif.
 
+Updated README.md
+
 ### [0.0.8]
 
 Fixed long press to drag the item move faster than finger.
