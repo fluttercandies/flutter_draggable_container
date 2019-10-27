@@ -6,11 +6,11 @@
 
 ## 截图 / Screenshots
 
-- ![demo 1](https://github.com/gzlock/images/raw/master/flutter_draggable_container/1.gif)
+[<img src="https://github.com/gzlock/images/raw/master/flutter_draggable_container/1.gif" width="200">](https://github.com/gzlock/images/raw/master/flutter_draggable_container/1.gif)
 
-- ![demo 2](https://github.com/gzlock/images/raw/master/flutter_draggable_container/2.gif)
+[<img src="https://github.com/gzlock/images/raw/master/flutter_draggable_container/2.gif" width="200">](https://github.com/gzlock/images/raw/master/flutter_draggable_container/2.gif)
 
-- ![demo 3](https://github.com/gzlock/images/raw/master/flutter_draggable_container/3.gif)
+[<img src="https://github.com/gzlock/images/raw/master/flutter_draggable_container/3.gif" width="200">](https://github.com/gzlock/images/raw/master/flutter_draggable_container/3.gif)
 
 ### 模式 / Mode
 
