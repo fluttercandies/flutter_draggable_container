@@ -42,6 +42,6 @@
     - onDraggableModeChanged(bool mode)
         - mode为true则进入了编辑模式，为false则退出了编辑模式.
         - When mode is true then in the draggable mode. If false it mean exited the draggable mode.
-    - Future<bool> onBeforeDelete(int index, DraggableItem item)
+    - Future\<bool\> onBeforeDelete(int index, DraggableItem item)
         - 删除item的确认事件，返回true删除，返回false不删除
         - The event for confirm to delete a item, if return true then delete, if false then no action.
