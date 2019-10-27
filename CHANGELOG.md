@@ -1,9 +1,19 @@
 ### [0.0.9]
-Updated the code.
+
+Add onBeforeDelete event.
+
+The addItem, deleteIndex, deleteItem methods add a parameter called triggerEvent, default is true.
+
+Updated the example code.
+
+Updated the demo gif.
 
 ### [0.0.8]
+
 Fixed long press to drag the item move faster than finger.
+
 Fixed deleted item error.
+
 Add the demo gif.
 
 
@@ -11,7 +21,7 @@ Add the demo gif.
 
 * All class names begin with Draggable
 
-* Add parameters:
+* Add parameters to DraggableContainer:
     - draggableMode
     - allWayUseLongPress
     

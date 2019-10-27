@@ -5,7 +5,9 @@
 ## Each children is draggable, deletable, fixable.
 
 ## 截图 / Screenshots
-![demo gif](./demo.gif)
+![demo1 gif](demo1.gif)
+![demo2 gif](demo2.gif)
+![demo3 gif](demo3.gif)
 
 ### 模式 / Mode
 

@@ -45,20 +45,21 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
 
   final EdgeInsets slotMargin;
 
-  final List<DraggableItem> items;
   final BoxDecoration slotDecoration, dragDecoration;
   final Function(List<T> items) onChanged;
   final Function(bool mode) onDraggableModeChanged;
+  final Future<bool> Function(int index, T item) onBeforeDelete;
   final bool draggableMode, autoReorder;
   final Offset deleteButtonPosition;
   final Duration animateDuration;
   final bool allWayUseLongPress;
+  List<DraggableItem> _items;
   Widget _deleteButton;
 
   DraggableContainer({
     Key key,
-    @required this.items,
-    @required deleteButton,
+    @required List<DraggableItem> items,
+    @required Widget deleteButton,
     this.slotSize = const Size(100, 100),
     this.slotMargin,
     this.slotDecoration,
@@ -66,6 +67,7 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
     this.autoReorder = true,
     this.onChanged,
     this.onDraggableModeChanged,
+    this.onBeforeDelete,
 
     /// Enter draggable mode as soon as possible
     this.draggableMode: false,
@@ -93,6 +95,11 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
         ),
       );
     this._deleteButton = deleteButton;
+    if (items == null || items.length == 0) {
+      throw Exception(
+          'The items parameter need to define and cannot be an empty list');
+    }
+    this._items = items;
   }
 
   @override
@@ -112,6 +119,8 @@ class DraggableContainerState<T extends DraggableItem>
   DraggableSlot toSlot;
   Offset longPressPosition;
 
+  List<T> get items => relationship.values.map((widget) => widget?.item);
+
   @override
   void initState() {
     super.initState();
@@ -119,8 +128,37 @@ class DraggableContainerState<T extends DraggableItem>
     WidgetsBinding.instance.addPostFrameCallback(initItems);
   }
 
-  void addItem(DraggableItem item) {
-    // todo
+  DraggableItemWidget _createItemWidget(T item, Offset position) {
+    return DraggableItemWidget<T>(
+      key: UniqueKey(),
+      stage: this,
+      item: item,
+      width: widget.slotSize.width,
+      height: widget.slotSize.height,
+      decoration: widget.dragDecoration,
+      deleteButton: widget._deleteButton,
+      deleteButtonPosition: widget.deleteButtonPosition,
+      position: position,
+      editMode: draggableMode,
+      animateDuration: widget.animateDuration,
+    );
+  }
+
+  bool addItem(T item, {bool triggerEvent: true}) {
+    if (item == null) return false;
+    final entires = relationship.entries;
+    for (var i = 0; i < entires.length; i++) {
+      final kv = entires.elementAt(i);
+      if (kv.value == null) {
+        final _widget = _createItemWidget(item, kv.key.position);
+        relationship[kv.key] = _widget;
+        layers.add(_widget);
+        setState(() {});
+        if (triggerEvent) _triggerOnChanged();
+        return true;
+      }
+    }
+    return false;
   }
 
   void initItems(_) {
@@ -133,8 +171,8 @@ class DraggableContainerState<T extends DraggableItem>
     // print('size $size');
     EdgeInsets margin = widget.slotMargin ?? EdgeInsets.all(0);
     double x = margin.left, y = margin.top;
-    for (var i = 0; i < widget.items.length; i++) {
-      final item = widget.items[i];
+    for (var i = 0; i < widget._items.length; i++) {
+      final item = widget._items[i];
       final Offset position = Offset(x, y),
           maxPosition =
               Offset(x + widget.slotSize.width, y + widget.slotSize.height);
@@ -146,21 +184,14 @@ class DraggableContainerState<T extends DraggableItem>
         maxPosition: maxPosition,
         event: this,
       );
-      final itemWidget = DraggableItemWidget<T>(
-        key: UniqueKey(),
-        stage: this,
-        item: item,
-        width: widget.slotSize.width,
-        height: widget.slotSize.height,
-        decoration: widget.dragDecoration,
-        deleteButton: widget._deleteButton,
-        deleteButtonPosition: widget.deleteButtonPosition,
-        position: position,
-        editMode: draggableMode,
-        animateDuration: widget.animateDuration,
-      );
-      layers.add(itemWidget);
-      relationship[slot] = itemWidget;
+      if (item == null) {
+        relationship[slot] = null;
+      } else {
+        print(i.toString());
+        final itemWidget = _createItemWidget(item, position);
+        layers.add(itemWidget);
+        relationship[slot] = itemWidget;
+      }
       x += widget.slotSize.width + margin.right;
       if (x + widget.slotSize.width + margin.right > size.width) {
         x = margin.left;
@@ -170,7 +201,7 @@ class DraggableContainerState<T extends DraggableItem>
     setState(() {});
   }
 
-  bool deleteFromIndex(int index) {
+  bool deleteIndex(int index, {bool triggerEvent: true}) {
     if (index < 0 || index >= relationship.length) return false;
     final entries = relationship.entries;
     for (var i = 0; i < entries.length; i++) {
@@ -179,38 +210,43 @@ class DraggableContainerState<T extends DraggableItem>
       if (entry.value == null) return false;
       relationship[entry.key] = null;
       layers.remove(entry.value);
-      widget.items.remove(entry.value.item);
+      widget._items.remove(entry.value.item);
       reorder();
       setState(() {});
-      _triggerOnChanged();
+      if (triggerEvent) _triggerOnChanged();
       return true;
     }
     return false;
   }
 
-  bool deleteFromItem(DraggableItem item) {
+  bool deleteItem(T item, {bool triggerEvent: true}) {
     final entries = relationship.entries;
     for (var kv in entries) {
       if (kv.value?.item == item) {
         relationship[kv.key] = null;
         layers.remove(kv.value);
-        widget.items.remove(kv.value.item);
+        widget._items.remove(kv.value.item);
         reorder();
         setState(() {});
-        _triggerOnChanged();
+        if (triggerEvent) _triggerOnChanged();
         return true;
       }
     }
     return false;
   }
 
-  bool _deleteFromWidget(DraggableItemWidget widget) {
+  Future<bool> _deleteFromWidget(DraggableItemWidget widget) async {
+    if (this.widget.onBeforeDelete != null) {
+      bool isDelete = await this.widget.onBeforeDelete(
+          relationship.values.toList().indexOf(widget), widget.item);
+      if (!isDelete) return false;
+    }
     final entries = relationship.entries;
     for (var kv in entries) {
       if (kv.value == widget) {
         relationship[kv.key] = null;
         layers.remove(widget);
-        this.widget.items.remove(widget.item);
+        this.widget._items.remove(widget.item);
         reorder();
         setState(() {});
         _triggerOnChanged();
@@ -357,7 +393,7 @@ class DraggableContainerState<T extends DraggableItem>
           // print('i: $i ,${currentItem?.item.toString()}');
           if (currentItem?.item?.fixed == true) continue;
           relationship[currentSlot] = lastItem;
-          lastItem.position = currentSlot.position;
+          lastItem?.position = currentSlot.position;
           lastItem = currentItem;
         }
         setState(() {});
@@ -419,7 +455,7 @@ class DraggableContainerState<T extends DraggableItem>
     final slot = findSlot(localPosition);
     final item = relationship[slot];
     if (slot == null || item == null) return false;
-    if (item.item.fixed) return false;
+    if (item.item.fixed == true) return false;
     final HitTestResult result = HitTestResult();
     WidgetsBinding.instance.hitTest(result, globalPosition);
     for (HitTestEntry entry in result.path) {
@@ -537,7 +573,7 @@ abstract class ItemWidgetEvent {
 
   updateActive(bool isActive);
 
-  get position;
+  Offset get position;
 }
 
 mixin ItemWidgetEventMixin<T extends StatefulWidget> on State<T>
@@ -637,8 +673,8 @@ class _DraggableItemWidgetState extends State<DraggableItemWidget> {
         width: widget.width,
         height: widget.height,
         child: IgnorePointer(
-          ignoring: editMode &&
-              (widget.item.deletable == true && widget.item.fixed == false),
+          ignoring:
+              editMode && (widget.item.deletable && widget.item.fixed == false),
           ignoringSemantics: editMode,
           child: widget.item.child,
         ),
@@ -646,7 +682,8 @@ class _DraggableItemWidgetState extends State<DraggableItemWidget> {
     ];
     if (editMode && widget.item.deletable) {
       if (widget.deleteButton == null) {
-        throw Exception('The deletable item need the delete button');
+        throw Exception(
+            'The deletable item need the delete button, but it is undefined');
       } else {
         children.add(Positioned(
           right: widget.deleteButtonPosition.dx,
