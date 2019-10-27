@@ -36,7 +36,7 @@
     - Press the Back key to exit the draggable mode.
     
 - 事件 / Events
-    - onChanged(List<T extends DraggableItem> items)
+    - onChanged(List\<T extends DraggableItem\> items)
         - 当子项目改变时触发(拖动过后，删除后)
         - Trigger when the items changed(dragged, deleted)
     - onDraggableModeChanged(bool mode)
