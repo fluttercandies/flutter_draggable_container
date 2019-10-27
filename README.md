@@ -5,9 +5,9 @@
 ## Each children is draggable, deletable, fixable.
 
 ## 截图 / Screenshots
-<img src="./demo1.gif" width="400" />
-<img src="./demo2.gif" width="400" />
-<img src="./demo3.gif" width="400" />
+<img src="./demo1.gif" width="300" />
+<img src="./demo2.gif" width="300" />
+<img src="./demo3.gif" width="300" />
 
 ### 模式 / Mode
 
