@@ -2,11 +2,12 @@
 
 fixed some issues.
 
+Add getItem(int index) method
+
 ### [0.1.2]
 
 Add insteadOfIndex(int index, DraggableItem item, {bool triggerEvent: true}) method
 
-Add getItem(int index) method
 
 ### [0.1.1]
 
