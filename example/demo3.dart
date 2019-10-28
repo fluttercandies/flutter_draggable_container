@@ -1,6 +1,6 @@
+import '../lib/draggable_container.dart';
 import 'package:flutter/material.dart';
 
-import '../lib/draggable_container.dart';
 import 'utils.dart';
 
 class DemoWidget3 extends StatefulWidget {
@@ -12,7 +12,7 @@ class _DemoWidget3 extends State<DemoWidget3> {
   final GlobalKey<ScaffoldState> _key = GlobalKey();
   final GlobalKey<DraggableContainerState> _containerKey = GlobalKey();
   DraggableItem _addButton;
-  int _count = 0;
+  int _count = 8;
 
   initState() {
     super.initState();

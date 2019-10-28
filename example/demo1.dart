@@ -1,8 +1,8 @@
 import 'dart:convert';
 
+import '../lib/draggable_container.dart';
 import 'package:flutter/material.dart';
 
-import '../lib/draggable_container.dart';
 import 'utils.dart';
 
 class DemoWidget extends StatelessWidget {
@@ -18,13 +18,14 @@ class DemoWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = [
       ...List.generate(
-          4,
-          (i) => MyItem(
-              key: 'item $i',
-              index: i,
-              onTap: () {
-                showSnackBar('Clicked the ${i}th item');
-              })),
+        4,
+        (i) => MyItem(
+            key: 'item $i',
+            index: i,
+            onTap: () {
+              showSnackBar('Clicked the ${i}th item');
+            })
+      ),
       DraggableItem(
         fixed: true,
         deletable: false,

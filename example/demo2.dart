@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 
 import '../lib/draggable_container.dart';
@@ -20,11 +18,13 @@ class DemoWidget2 extends StatelessWidget {
           child: RaisedButton.icon(
               color: Colors.orange,
               onPressed: () {
-                _containerKey.currentState
-                    .deleteItem(_addButton, triggerEvent: false);
+                if (_containerKey.currentState.deleteItem(_addButton,
+                    triggerEvent: false)) print('删除 成功');
                 if (_containerKey.currentState
-                    .addItem(MyItem(key: _count.toString(), index: _count)))
+                    .addItem(MyItem(key: _count.toString(), index: _count))) {
                   _count++;
+                  print('add success');
+                }
               },
               textColor: Colors.white,
               icon: Icon(Icons.add_box, size: 20),
@@ -70,15 +70,16 @@ class DemoWidget2 extends StatelessWidget {
             // item list
             items: items,
             onChanged: (items) {
-              final finalItems = items.where((item) => item is MyItem).toList();
-              showSnackBar(
-                  'Items changed\nraw: $items\njson: ${json.encode(finalItems)}');
+//              final finalItems = items.where((item) => item is MyItem).toList();
+//              showSnackBar(
+//                  'Items changed\nraw: $items\njson: ${json.encode(finalItems)}');
               final index = items.indexOf(null);
               _containerKey.currentState.deleteItem(_addButton);
-              if (index != -1 &&
-                  _containerKey.currentState.hasItem(_addButton) == false)
+              final hasButton = _containerKey.currentState.hasItem(_addButton);
+              if (index > -1 && !hasButton) {
                 _containerKey.currentState
                     .insteadOfIndex(index, _addButton, triggerEvent: false);
+              }
             },
           ),
         ),

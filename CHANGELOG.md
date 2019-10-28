@@ -1,3 +1,11 @@
+### [0.1.5]
+
+Fixed some issues.
+
+Updated the example code.
+
+Updated the test code.
+
 ### [0.1.4+hotfix]
 
 Fixed some issues.

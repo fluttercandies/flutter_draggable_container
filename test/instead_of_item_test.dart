@@ -34,6 +34,8 @@ void main() {
 
     expect(state.insteadOfIndex(1, TestDraggableItem(100)), true);
 
+    await tester.pump(Duration(milliseconds: 1000));
+
     // print(state.items);
 
     expect(state.getItem(1).index, 100);

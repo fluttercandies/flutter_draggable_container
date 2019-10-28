@@ -9,9 +9,11 @@ class MyItem extends DraggableItem {
   Widget child, deleteButton;
   final Function onTap;
 
-  MyItem({this.key='key', this.index, this.onTap}) {
+  MyItem({this.key = 'key', this.index, this.onTap}) {
     this.child = GestureDetector(
-      onTap: () => onTap(),
+      onTap: () {
+        if (onTap != null) onTap();
+      },
       child: Container(
         color: randomColor(),
         child: Center(child: Text(index.toString())),

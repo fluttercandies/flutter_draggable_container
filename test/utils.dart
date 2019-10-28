@@ -18,13 +18,13 @@ List<Offset> defaultItemsPosition() {
 }
 
 List<Offset> getWidgetsPosition(
-    Map<DraggableSlot, DraggableItemWidget<TestDraggableItem>> map) {
-  return List.from(map.values.map((widget) => widget.position));
+    Map<DraggableSlot, GlobalKey<DraggableItemWidgetState<TestDraggableItem>>> map) {
+  return List.from(map.values.map((key) => key.currentState.position));
 }
 
 List<int> getWidgetsIndex(
-    Map<DraggableSlot, DraggableItemWidget<TestDraggableItem>> map) {
-  return List.from(map.values.map((widget) => widget.item.index));
+    Map<DraggableSlot, GlobalKey<DraggableItemWidgetState<TestDraggableItem>>> map) {
+  return List.from(map.values.map((key) => key.currentState.item.index));
 }
 
 class TestDraggableItem extends DraggableItem {
@@ -41,7 +41,7 @@ class TestDraggableItem extends DraggableItem {
   Map toJson() => {'index': index, 'fixed': fixed};
 }
 
-Future<DraggableContainerState> createContainer(WidgetTester tester) async {
+Future<DraggableContainerState<TestDraggableItem>> createContainer(WidgetTester tester) async {
   GlobalKey<DraggableContainerState> key = GlobalKey();
   await tester.binding.setSurfaceSize(Size(320, 1920));
   await tester.pumpWidget(
@@ -61,7 +61,7 @@ Future<DraggableContainerState> createContainer(WidgetTester tester) async {
     ),
   );
   await tester.pump();
-  DraggableContainerState state = key.currentState;
+  DraggableContainerState<TestDraggableItem> state = key.currentState;
   await tester.pump();
   return state;
 }
