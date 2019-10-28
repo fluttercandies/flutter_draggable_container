@@ -83,8 +83,7 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
     this.deleteButtonPosition: const Offset(0, 0),
   }) : super(key: key) {
     if (items == null || items.length == 0) {
-      throw Exception(
-          'The items parameter is undeinfed or empty');
+      throw Exception('The items parameter is undeinfed or empty');
     }
   }
 
@@ -96,12 +95,11 @@ class DraggableContainerState<T extends DraggableItem>
     extends State<DraggableContainer>
     with DraggableContainerEventMixin, StageItemsEventMixin {
   final GlobalKey _containerKey = GlobalKey();
-  final List<DraggableItemWidget<T>> layers = [];
   final Map<DraggableSlot, GlobalKey<DraggableItemWidgetState<T>>>
   relationship = {};
+  final List<DraggableItemWidget> layers = [];
   final List<GlobalKey> _dragBeforeList = [];
-  final Map<Type, GestureRecognizerFactory> gestures =
-  <Type, GestureRecognizerFactory>{};
+  final Map<Type, GestureRecognizerFactory> gestures = {};
 
   Widget deleteButton;
   bool draggableMode = false;
@@ -109,11 +107,12 @@ class DraggableContainerState<T extends DraggableItem>
   DraggableSlot toSlot;
   Offset longPressPosition;
   GestureRecognizerFactory _draggableItemRecognizer;
+  double _maxHeight = 0;
 
   List get items =>
-      List.from(relationship.values.map((globalKey) =>
-      globalKey?.currentState
-          ?.item));
+      List.from(
+          relationship.values.map((globalKey) =>
+          globalKey?.currentState?.item));
 
   @override
   void initState() {
@@ -158,6 +157,10 @@ class DraggableContainerState<T extends DraggableItem>
             });
 
     WidgetsBinding.instance.addPostFrameCallback(initItems);
+    if (draggableMode) {
+      print('立即进入编辑模式');
+      gestures[DraggableItemRecognizer] = _draggableItemRecognizer;
+    }
   }
 
   void _createItemWidget(DraggableSlot slot, T item) {
@@ -189,12 +192,9 @@ class DraggableContainerState<T extends DraggableItem>
     for (var i = 0; i < entries.length; i++) {
       final kv = entries.elementAt(i);
       if (kv.value == null) {
-        print('addItem $i is ${kv.value}');
         _createItemWidget(kv.key, item);
         setState(() {});
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (triggerEvent) _triggerOnChanged();
-        });
+        if (triggerEvent) _triggerOnChanged();
         return true;
       }
     }
@@ -240,6 +240,7 @@ class DraggableContainerState<T extends DraggableItem>
         y += widget.slotSize.height + margin.bottom + margin.top;
       }
     }
+    _maxHeight = y;
     _changeChildrenMode(widget.draggableMode);
     setState(() {});
   }
@@ -265,9 +266,9 @@ class DraggableContainerState<T extends DraggableItem>
     final entries = relationship.entries;
     for (var kv in entries) {
       if (kv.value?.currentState?.item == item) {
+        layers.remove(kv.value.currentWidget);
         relationship[kv.key] = null;
         reorder();
-        layers.remove(kv.value?.currentWidget);
         setState(() {});
         if (triggerEvent) _triggerOnChanged();
         return true;
@@ -289,10 +290,6 @@ class DraggableContainerState<T extends DraggableItem>
   }
 
   T getItem(int index) {
-    print(
-        'getItem $index ${relationship.values
-            .elementAt(index)
-            .currentState}');
     return relationship.values
         .elementAt(index)
         ?.currentState
@@ -353,10 +350,13 @@ class DraggableContainerState<T extends DraggableItem>
   }
 
   _triggerOnChanged() {
-    if (widget.onChanged != null)
-      widget.onChanged(relationship.keys
-          .map((key) => relationship[key]?.currentState?.item)
-          .toList());
+    if (widget.onChanged != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.onChanged(relationship.keys
+            .map((key) => relationship[key]?.currentState?.item)
+            .toList());
+      });
+    }
   }
 
   DraggableSlot findSlot(Offset position) {
@@ -370,16 +370,6 @@ class DraggableContainerState<T extends DraggableItem>
     return null;
   }
 
-//  DraggableItemWidget findItem(Offset position) {
-//    for (var i = layers.length - 1; i >= 0; i--) {
-//      final item = layers[i];
-//      if (item.position <= position && item.maxPosition >= position) {
-//        return item;
-//      }
-//    }
-//    return null;
-//  }
-
   @override
   onPanStart(DragStartDetails details) {
     if (!draggableMode) return;
@@ -390,10 +380,10 @@ class DraggableContainerState<T extends DraggableItem>
         key.currentState?.item?.fixed == true) return;
     pickUp = key;
     pickUp.currentState.active = true;
-    toSlot = slot;
-    _dragBeforeList.addAll(relationship.values);
     layers.remove(pickUp.currentWidget);
     layers.add(pickUp.currentWidget);
+    toSlot = slot;
+    _dragBeforeList.addAll(relationship.values);
     setState(() {});
   }
 
@@ -553,6 +543,7 @@ class DraggableContainerState<T extends DraggableItem>
   @override
   Widget build(BuildContext context) {
     return Container(
+      constraints: BoxConstraints.expand(height: _maxHeight),
       child: RawGestureDetector(
         behavior: HitTestBehavior.opaque,
         gestures: gestures,

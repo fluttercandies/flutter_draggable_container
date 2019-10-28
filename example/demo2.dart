@@ -18,12 +18,12 @@ class DemoWidget2 extends StatelessWidget {
           child: RaisedButton.icon(
               color: Colors.orange,
               onPressed: () {
-                if (_containerKey.currentState.deleteItem(_addButton,
-                    triggerEvent: false)) print('删除 成功');
-                if (_containerKey.currentState
-                    .addItem(MyItem(key: _count.toString(), index: _count))) {
+                final buttonIndex =
+                    _containerKey.currentState.items.indexOf(_addButton);
+                if (buttonIndex > -1) {
+                  _containerKey.currentState.insteadOfIndex(buttonIndex,
+                      MyItem(key: _count.toString(), index: _count));
                   _count++;
-                  print('add success');
                 }
               },
               textColor: Colors.white,
@@ -50,8 +50,6 @@ class DemoWidget2 extends StatelessWidget {
       appBar: AppBar(title: Text('Demo 2')),
       body: Card(
         child: Container(
-          width: 500,
-          height: 330,
           child: DraggableContainer(
             key: _containerKey,
             draggableMode: true,
@@ -73,12 +71,14 @@ class DemoWidget2 extends StatelessWidget {
 //              final finalItems = items.where((item) => item is MyItem).toList();
 //              showSnackBar(
 //                  'Items changed\nraw: $items\njson: ${json.encode(finalItems)}');
-              final index = items.indexOf(null);
-              _containerKey.currentState.deleteItem(_addButton);
-              final hasButton = _containerKey.currentState.hasItem(_addButton);
-              if (index > -1 && !hasButton) {
+              final nullIndex = items.indexOf(null);
+              final buttonIndex = items.indexOf(_addButton);
+              print('$nullIndex $buttonIndex');
+              if (buttonIndex == -1 && (nullIndex != -1 && nullIndex != buttonIndex)) {
                 _containerKey.currentState
-                    .insteadOfIndex(index, _addButton, triggerEvent: false);
+                    .deleteItem(_addButton, triggerEvent: false);
+                _containerKey.currentState
+                    .insteadOfIndex(nullIndex, _addButton, triggerEvent: false);
               }
             },
           ),

@@ -68,8 +68,6 @@ class DemoWidget extends StatelessWidget {
                 child: Text('DraggableContainer In ListView'))),
         Card(
           child: Container(
-            width: 500,
-            height: 330,
             child: DraggableContainer(
 //              draggableMode: true,
               autoReorder: true,

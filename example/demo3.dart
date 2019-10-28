@@ -26,6 +26,8 @@ class _DemoWidget3 extends State<DemoWidget3> {
                 if (_containerKey.currentState
                     .addItem(MyItem(key: _count.toString(), index: _count)))
                   _count++;
+                else
+                  showSnackBar('It\'s full');
               },
               textColor: Colors.white,
               icon: Icon(
@@ -82,8 +84,6 @@ class _DemoWidget3 extends State<DemoWidget3> {
       appBar: AppBar(title: Text('Demo 3')),
       body: Card(
         child: Container(
-          width: 500,
-          height: 330,
           child: DraggableContainer(
             key: _containerKey,
 //              draggableMode: true,
