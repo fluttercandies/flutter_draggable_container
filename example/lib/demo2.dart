@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../lib/draggable_container.dart';
+import 'package:draggable_container/draggable_container.dart';
 import 'utils.dart';
 
 // ignore: must_be_immutable
@@ -73,12 +73,13 @@ class DemoWidget2 extends StatelessWidget {
 //                  'Items changed\nraw: $items\njson: ${json.encode(finalItems)}');
               final nullIndex = items.indexOf(null);
               final buttonIndex = items.indexOf(_addButton);
-              print('$nullIndex $buttonIndex');
-              if (buttonIndex == -1 && (nullIndex != -1 && nullIndex != buttonIndex)) {
-                _containerKey.currentState
-                    .deleteItem(_addButton, triggerEvent: false);
+              print('null $nullIndex, button $buttonIndex');
+              if (nullIndex > -1 && buttonIndex == -1) {
                 _containerKey.currentState
                     .insteadOfIndex(nullIndex, _addButton, triggerEvent: false);
+              } else if (nullIndex > -1 && buttonIndex > -1) {
+                _containerKey.currentState
+                    .moveTo(buttonIndex, nullIndex, triggerEvent: false);
               }
             },
           ),

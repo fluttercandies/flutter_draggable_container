@@ -1,3 +1,9 @@
+### [0.1.6]
+
+Updated the example code.
+
+Add bool moveTo(int from, int to, {bool triggerEvent: true, bool force: false}) method
+
 ### [0.1.5]
 
 Fixed some issues.
