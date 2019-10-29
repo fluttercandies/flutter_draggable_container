@@ -1,4 +1,4 @@
-name: draggable_container
+name: flutter_draggable_container
 description:
   A Draggable Widget Container.
   Each children is Draggable, Deletable and Fixable.

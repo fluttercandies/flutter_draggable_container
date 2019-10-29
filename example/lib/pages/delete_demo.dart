@@ -1,20 +1,25 @@
-import '../lib/draggable_container.dart';
+import 'package:example/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_draggable_container/draggable_container.dart';
+import 'package:oktoast/oktoast.dart';
+import 'package:ff_annotation_route/ff_annotation_route.dart';
 
-import 'utils.dart';
-
-class DemoWidget3 extends StatefulWidget {
+@FFRoute(
+    name: "draggable_container://delete",
+    routeName: "delete",
+    description: "show how to delete item with draggable_container")
+class DeleteDemo extends StatefulWidget {
   @override
-  State<StatefulWidget> createState() => _DemoWidget3();
+  _DeleteDemoState createState() => _DeleteDemoState();
 }
 
-class _DemoWidget3 extends State<DemoWidget3> {
-  final GlobalKey<ScaffoldState> _key = GlobalKey();
+class _DeleteDemoState extends State<DeleteDemo> {
   final GlobalKey<DraggableContainerState> _containerKey = GlobalKey();
   DraggableItem _addButton;
   int _count = 8;
-
-  initState() {
+  List<DraggableItem> items;
+  @override
+  void initState() {
     super.initState();
     _addButton = DraggableItem(
       fixed: true,
@@ -27,7 +32,7 @@ class _DemoWidget3 extends State<DemoWidget3> {
                     .addItem(MyItem(key: _count.toString(), index: _count)))
                   _count++;
                 else
-                  showSnackBar('It\'s full');
+                  showToast('It\'s full');
               },
               textColor: Colors.white,
               icon: Icon(
@@ -38,6 +43,40 @@ class _DemoWidget3 extends State<DemoWidget3> {
                 'Add',
                 style: TextStyle(fontSize: 12),
               ))),
+    );
+    items = [
+      ...List.generate(8, (i) => MyItem(index: i)),
+      _addButton,
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('delete demo')),
+      body: Card(
+        child: Container(
+          child: DraggableContainer(
+            key: _containerKey,
+//              draggableMode: true,
+            autoReorder: true,
+//              allWayUseLongPress: true,
+            // slot decoration
+            slotDecoration:
+                BoxDecoration(border: Border.all(width: 2, color: Colors.blue)),
+            // the decoration when dragging item
+            dragDecoration: BoxDecoration(
+                boxShadow: [BoxShadow(color: Colors.black, blurRadius: 10)]),
+            // slot margin
+            slotMargin: EdgeInsets.all(5),
+            // the slot size
+            slotSize: Size(100, 100),
+            // item list
+            items: items,
+            onBeforeDelete: (int index, item) => _showDialog(index, item),
+          ),
+        ),
+      ),
     );
   }
 
@@ -64,47 +103,6 @@ class _DemoWidget3 extends State<DemoWidget3> {
           ],
         );
       },
-    );
-  }
-
-  void showSnackBar(String text) {
-    _key.currentState.hideCurrentSnackBar();
-    _key.currentState.showSnackBar(SnackBar(
-      content: Text(text),
-    ));
-  }
-
-  Widget build(BuildContext context) {
-    final items = [
-      ...List.generate(8, (i) => MyItem(index: i)),
-      _addButton,
-    ];
-    return Scaffold(
-      key: _key,
-      appBar: AppBar(title: Text('Demo 3')),
-      body: Card(
-        child: Container(
-          child: DraggableContainer(
-            key: _containerKey,
-//              draggableMode: true,
-            autoReorder: true,
-//              allWayUseLongPress: true,
-            // slot decoration
-            slotDecoration:
-                BoxDecoration(border: Border.all(width: 2, color: Colors.blue)),
-            // the decoration when dragging item
-            dragDecoration: BoxDecoration(
-                boxShadow: [BoxShadow(color: Colors.black, blurRadius: 10)]),
-            // slot margin
-            slotMargin: EdgeInsets.all(5),
-            // the slot size
-            slotSize: Size(100, 100),
-            // item list
-            items: items,
-            onBeforeDelete: (int index, item) => _showDialog(index, item),
-          ),
-        ),
-      ),
     );
   }
 }

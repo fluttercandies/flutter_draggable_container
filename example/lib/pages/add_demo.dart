@@ -1,16 +1,27 @@
+import 'package:example/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_draggable_container/draggable_container.dart';
+//import 'package:oktoast/oktoast.dart';
+import 'package:ff_annotation_route/ff_annotation_route.dart';
 
-import '../lib/draggable_container.dart';
-import 'utils.dart';
+@FFRoute(
+    name: "draggable_container://add",
+    routeName: "add",
+    description: "show how to add item with draggable_container")
+class AddDemo extends StatefulWidget {
+  @override
+  _AddDemoState createState() => _AddDemoState();
+}
 
-// ignore: must_be_immutable
-class DemoWidget2 extends StatelessWidget {
-  final GlobalKey<ScaffoldState> _key = GlobalKey();
+class _AddDemoState extends State<AddDemo> {
   final GlobalKey<DraggableContainerState> _containerKey = GlobalKey();
   DraggableItem _addButton;
   int _count = 0;
+  List<DraggableItem> items;
 
-  DemoWidget2() {
+  @override
+  void initState() {
+    super.initState();
     _addButton = DraggableItem(
       fixed: true,
       deletable: false,
@@ -30,23 +41,17 @@ class DemoWidget2 extends StatelessWidget {
               icon: Icon(Icons.add_box, size: 20),
               label: Text('Add', style: TextStyle(fontSize: 12)))),
     );
-  }
 
-  void showSnackBar(String text) {
-    _key.currentState.hideCurrentSnackBar();
-    _key.currentState.showSnackBar(SnackBar(
-      content: Text(text),
-    ));
-  }
-
-  Widget build(BuildContext context) {
-    final items = [
+    items = [
       MyItem(index: 111),
       _addButton,
       ...List.generate(7, (i) => null),
     ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      key: _key,
       appBar: AppBar(title: Text('Demo 2')),
       body: Card(
         child: Container(
@@ -69,12 +74,13 @@ class DemoWidget2 extends StatelessWidget {
             items: items,
             onChanged: (items) {
 //              final finalItems = items.where((item) => item is MyItem).toList();
-//              showSnackBar(
-//                  'Items changed\nraw: $items\njson: ${json.encode(finalItems)}');
+//             showToast(
+//                 'Items changed\nraw: $items\njson: ${json.encode(finalItems)}');
               final nullIndex = items.indexOf(null);
               final buttonIndex = items.indexOf(_addButton);
               print('$nullIndex $buttonIndex');
-              if (buttonIndex == -1 && (nullIndex != -1 && nullIndex != buttonIndex)) {
+              if (buttonIndex == -1 &&
+                  (nullIndex != -1 && nullIndex != buttonIndex)) {
                 _containerKey.currentState
                     .deleteItem(_addButton, triggerEvent: false);
                 _containerKey.currentState

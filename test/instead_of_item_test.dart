@@ -4,7 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../lib/draggable_container.dart';
+import 'package:flutter_draggable_container/draggable_container.dart';
 import 'utils.dart';
 
 /// The items position
