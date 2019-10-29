@@ -18,20 +18,22 @@ List<Offset> defaultItemsPosition() {
 }
 
 List<Offset> getWidgetsPosition(
-    Map<DraggableSlot, GlobalKey<DraggableItemWidgetState<TestDraggableItem>>> map) {
+    Map<DraggableSlot, GlobalKey<DraggableItemWidgetState<TestDraggableItem>>>
+        map) {
   return List.from(map.values.map((key) => key.currentState.position));
 }
 
 List<int> getWidgetsIndex(
-    Map<DraggableSlot, GlobalKey<DraggableItemWidgetState<TestDraggableItem>>> map) {
+    Map<DraggableSlot, GlobalKey<DraggableItemWidgetState<TestDraggableItem>>>
+        map) {
   return List.from(map.values.map((key) => key.currentState.item.index));
 }
 
 class TestDraggableItem extends DraggableItem {
   final int index;
 
-  TestDraggableItem(this.index, {bool fixed})
-      : super(child: Container(), fixed: fixed);
+  TestDraggableItem(this.index, {bool fixed, bool deletable: true})
+      : super(child: Container(), fixed: fixed, deletable: deletable);
 
   @override
   String toString() {
@@ -41,7 +43,8 @@ class TestDraggableItem extends DraggableItem {
   Map toJson() => {'index': index, 'fixed': fixed};
 }
 
-Future<DraggableContainerState<TestDraggableItem>> createContainer(WidgetTester tester) async {
+Future<DraggableContainerState<TestDraggableItem>> createContainer(
+    WidgetTester tester) async {
   GlobalKey<DraggableContainerState> key = GlobalKey();
   await tester.binding.setSurfaceSize(Size(320, 1920));
   await tester.pumpWidget(

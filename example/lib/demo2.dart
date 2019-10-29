@@ -20,9 +20,17 @@ class DemoWidget2 extends StatelessWidget {
               onPressed: () {
                 final buttonIndex =
                     _containerKey.currentState.items.indexOf(_addButton);
+                final nullIndex =
+                    _containerKey.currentState.items.indexOf(null);
+                print('add $nullIndex $buttonIndex');
+                if (nullIndex > -1 && buttonIndex > -1) {
+                  _containerKey.currentState
+                      .moveTo(buttonIndex, nullIndex, triggerEvent: false);
+                }
                 if (buttonIndex > -1) {
                   _containerKey.currentState.insteadOfIndex(buttonIndex,
-                      MyItem(key: _count.toString(), index: _count));
+                      MyItem(key: _count.toString(), index: _count),
+                      force: true, triggerEvent: false);
                   _count++;
                 }
               },
@@ -71,13 +79,16 @@ class DemoWidget2 extends StatelessWidget {
 //              final finalItems = items.where((item) => item is MyItem).toList();
 //              showSnackBar(
 //                  'Items changed\nraw: $items\njson: ${json.encode(finalItems)}');
+              // the
               final nullIndex = items.indexOf(null);
               final buttonIndex = items.indexOf(_addButton);
               print('null $nullIndex, button $buttonIndex');
               if (nullIndex > -1 && buttonIndex == -1) {
                 _containerKey.currentState
                     .insteadOfIndex(nullIndex, _addButton, triggerEvent: false);
-              } else if (nullIndex > -1 && buttonIndex > -1) {
+              } else if (nullIndex > -1 &&
+                  buttonIndex > -1 &&
+                  nullIndex < buttonIndex) {
                 _containerKey.currentState
                     .moveTo(buttonIndex, nullIndex, triggerEvent: false);
               }

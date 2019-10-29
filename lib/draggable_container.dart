@@ -274,10 +274,13 @@ class DraggableContainerState<T extends DraggableItem>
     return false;
   }
 
-  bool insteadOfIndex(int index, T item, {bool triggerEvent: true}) {
+  bool insteadOfIndex(int index, T item,
+      {bool triggerEvent: true, bool force: false}) {
     final slots = relationship.keys;
     if (index < 0 || slots.length <= index) return false;
     final slot = slots.elementAt(index);
+    if (!force && relationship[slot]?.currentState?.item?.deletable == false)
+      return false;
     layers.remove(relationship[slot]?.currentWidget);
     _createItemWidget(slot, item);
     reorder();
@@ -294,11 +297,11 @@ class DraggableContainerState<T extends DraggableItem>
     final fromSlot = slots.elementAt(from), toSlot = slots.elementAt(to);
     if (relationship[fromSlot] == null) return false;
     if (!force &&
-        (relationship[toSlot]?.currentState?.item?.deletable == true)) {
+        relationship[toSlot]?.currentState?.item?.deletable == false) {
       return false;
     }
     relationship[toSlot] = relationship[fromSlot];
-    relationship[toSlot].currentState.position = toSlot.position;
+    relationship[toSlot]?.currentState?.position = toSlot.position;
     relationship[fromSlot] = null;
 
     if (triggerEvent) _triggerOnChanged();
@@ -679,6 +682,7 @@ class DraggableItemWidgetState<T extends DraggableItem>
   double x, y;
   bool _draggableMode = false;
   bool _active = false;
+  Duration _duration;
 
   DraggableItemWidgetState(this.item);
 
@@ -691,6 +695,7 @@ class DraggableItemWidgetState<T extends DraggableItem>
 
   set active(bool value) {
     _active = value;
+    _duration = _active ? Duration.zero : widget.animateDuration;
     setState(() {});
   }
 
@@ -702,6 +707,7 @@ class DraggableItemWidgetState<T extends DraggableItem>
     x = widget.position.dx;
     y = widget.position.dy;
     _draggableMode = widget.editMode;
+    _duration = widget.animateDuration;
   }
 
   @override
@@ -740,7 +746,7 @@ class DraggableItemWidgetState<T extends DraggableItem>
     return AnimatedPositioned(
       left: x,
       top: y,
-      duration: _active ? Duration.zero : widget.animateDuration,
+      duration: _duration,
       width: widget.width,
       height: widget.height,
       child: Stack(children: children),
