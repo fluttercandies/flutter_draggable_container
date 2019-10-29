@@ -62,7 +62,7 @@ class DemoWidget2 extends StatelessWidget {
             key: _containerKey,
             draggableMode: true,
             autoReorder: true,
-              allWayUseLongPress: true,
+            // allWayUseLongPress: true,
             // slot decoration
             slotDecoration:
                 BoxDecoration(border: Border.all(width: 2, color: Colors.blue)),

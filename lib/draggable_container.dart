@@ -251,7 +251,7 @@ class DraggableContainerState<T extends DraggableItem>
       if (kv.value == null) return false;
       relationship[kv.key] = null;
       layers.remove(kv.value?.currentWidget);
-      reorder();
+      if (widget.autoReorder) reorder();
       setState(() {});
       if (triggerEvent) _triggerOnChanged();
       return true;
@@ -265,7 +265,7 @@ class DraggableContainerState<T extends DraggableItem>
       if (kv.value?.currentState?.item == item) {
         layers.remove(kv.value.currentWidget);
         relationship[kv.key] = null;
-        reorder();
+        if (widget.autoReorder) reorder();
         setState(() {});
         if (triggerEvent) _triggerOnChanged();
         return true;
@@ -283,7 +283,7 @@ class DraggableContainerState<T extends DraggableItem>
       return false;
     layers.remove(relationship[slot]?.currentWidget);
     _createItemWidget(slot, item);
-    reorder();
+    if (widget.autoReorder) reorder();
     setState(() {});
     if (triggerEvent) _triggerOnChanged();
     return true;
@@ -323,7 +323,7 @@ class DraggableContainerState<T extends DraggableItem>
     }
     final kv = relationship.entries.elementAt(index);
     relationship[kv.key] = null;
-    reorder();
+    if (widget.autoReorder) reorder();
     setState(() {});
     layers.remove(kv.value?.currentWidget);
     _triggerOnChanged();
