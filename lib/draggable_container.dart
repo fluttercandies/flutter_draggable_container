@@ -154,11 +154,11 @@ class DraggableContainerState<T extends DraggableItem>
         ..onPanEnd = onPanEnd;
     });
 
-    WidgetsBinding.instance.addPostFrameCallback(initItems);
-    if (draggableMode) {
-      print('立即进入编辑模式');
+    if (draggableMode && !widget.allWayUseLongPress) {
       gestures[DraggableItemRecognizer] = _draggableItemRecognizer;
     }
+
+    WidgetsBinding.instance.addPostFrameCallback(_initItems);
   }
 
   void _createItemWidget(DraggableSlot slot, T item) {
@@ -207,7 +207,7 @@ class DraggableContainerState<T extends DraggableItem>
         -1;
   }
 
-  void initItems(_) {
+  void _initItems(_) {
     // print('initItems');
     relationship.clear();
     layers.clear();
@@ -415,12 +415,12 @@ class DraggableContainerState<T extends DraggableItem>
         temp = slot;
         moveChanged++;
         if (slot == toSlot) return;
-        dragTo(slot);
+        _dragTo(slot);
       }
     }
   }
 
-  dragTo(DraggableSlot to) {
+  void _dragTo(DraggableSlot to) {
     if (pickUp == null) return;
     final slots = relationship.keys.toList();
     final fromIndex = slots.indexOf(toSlot), toIndex = slots.indexOf(to);
