@@ -1,3 +1,7 @@
+### [0.1.6+1]
+
+Fixed: when second times enter the draggable mode, the draggable item move faster than finger
+
 ### [0.1.6]
 
 Add bool moveTo(int from, int to, {bool triggerEvent: true, bool force: false}) method

@@ -477,6 +477,7 @@ class DraggableContainerState<T extends DraggableItem>
 
   @override
   onPanEnd(_) {
+    gestures.remove(DraggableItemRecognizer);
     if (pickUp != null) {
       pickUp.currentState.position = toSlot.position;
       pickUp.currentState.active = false;
@@ -507,10 +508,8 @@ class DraggableContainerState<T extends DraggableItem>
       onPanStart(DragStartDetails(localPosition: details.localPosition));
     }
 
-    if (draggableMode && widget.allWayUseLongPress == false) {
+    if (widget.allWayUseLongPress == false) {
       gestures[DraggableItemRecognizer] = _draggableItemRecognizer;
-    } else {
-      gestures.remove(DraggableItemRecognizer);
     }
     setState(() {});
   }

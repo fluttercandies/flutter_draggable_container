@@ -76,10 +76,6 @@ class DemoWidget2 extends StatelessWidget {
             // item list
             items: items,
             onChanged: (items) {
-//              final finalItems = items.where((item) => item is MyItem).toList();
-//              showSnackBar(
-//                  'Items changed\nraw: $items\njson: ${json.encode(finalItems)}');
-              // the
               final nullIndex = items.indexOf(null);
               final buttonIndex = items.indexOf(_addButton);
               print('null $nullIndex, button $buttonIndex');
