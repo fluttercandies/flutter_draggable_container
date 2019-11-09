@@ -60,7 +60,7 @@ class DemoWidget2 extends StatelessWidget {
         child: Container(
           child: DraggableContainer(
             key: _containerKey,
-            draggableMode: true,
+            draggableMode: false,
             autoReorder: true,
             // allWayUseLongPress: true,
             // slot decoration
@@ -75,10 +75,13 @@ class DemoWidget2 extends StatelessWidget {
             slotSize: Size(100, 100),
             // item list
             items: items,
+            onDragEnd: (){
+              _containerKey.currentState.draggableMode = false;
+            },
             onChanged: (items) {
               final nullIndex = items.indexOf(null);
               final buttonIndex = items.indexOf(_addButton);
-              print('null $nullIndex, button $buttonIndex');
+              // print('null $nullIndex, button $buttonIndex');
               if (nullIndex > -1 && buttonIndex == -1) {
                 _containerKey.currentState
                     .insteadOfIndex(nullIndex, _addButton, triggerEvent: false);

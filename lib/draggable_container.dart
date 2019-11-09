@@ -106,15 +106,27 @@ class DraggableContainerState<T extends DraggableItem>
   final Map<Type, GestureRecognizerFactory> gestures = {};
 
   Widget deleteButton;
-  bool draggableMode = false;
+  bool _draggableMode = false;
   GlobalKey<DraggableItemWidgetState> pickUp;
   DraggableSlot toSlot;
   Offset longPressPosition;
-  GestureRecognizerFactory _draggableItemRecognizer;
+  GestureRecognizerFactory _longPressRecognizer, _draggableItemRecognizer;
   double _maxHeight = 0;
 
   List get items => List.from(
       relationship.values.map((globalKey) => globalKey?.currentState?.item));
+
+  get draggableMode => _draggableMode;
+
+  set draggableMode(bool value) {
+    // print('draggableMode $value');
+    _draggableMode = value;
+    if (value)
+      _start();
+    else
+      _end();
+    _changeChildrenMode();
+  }
 
   @override
   void initState() {
@@ -134,8 +146,8 @@ class DraggableContainerState<T extends DraggableItem>
           color: Colors.white,
         ),
       );
-    draggableMode = widget.draggableMode;
-    gestures[LongPressGestureRecognizer] =
+
+    gestures[LongPressGestureRecognizer] = _longPressRecognizer =
         GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
             () => LongPressGestureRecognizer(),
             (LongPressGestureRecognizer instance) {
@@ -144,6 +156,8 @@ class DraggableContainerState<T extends DraggableItem>
         ..onLongPressMoveUpdate = onLongPressMoveUpdate
         ..onLongPressEnd = onLongPressEnd;
     });
+
+    /// unused
     _draggableItemRecognizer =
         GestureRecognizerFactoryWithHandlers<DraggableItemRecognizer>(
             () => DraggableItemRecognizer(containerState: this),
@@ -158,7 +172,7 @@ class DraggableContainerState<T extends DraggableItem>
         ..onPanEnd = onPanEnd;
     });
 
-    if (draggableMode && !widget.allWayUseLongPress) {
+    if (_draggableMode && !widget.allWayUseLongPress) {
       gestures[DraggableItemRecognizer] = _draggableItemRecognizer;
     }
 
@@ -180,7 +194,7 @@ class DraggableContainerState<T extends DraggableItem>
         deleteButton: this.deleteButton,
         deleteButtonPosition: this.widget.deleteButtonPosition,
         position: slot.position,
-        editMode: draggableMode,
+        editMode: _draggableMode,
         animateDuration: this.widget.animateDuration,
       );
       layers.add(widget);
@@ -213,6 +227,7 @@ class DraggableContainerState<T extends DraggableItem>
 
   void _initItems(_) {
     // print('initItems');
+    _draggableMode = widget.draggableMode;
     relationship.clear();
     layers.clear();
     final RenderBox renderBoxRed =
@@ -235,14 +250,18 @@ class DraggableContainerState<T extends DraggableItem>
         event: this,
       );
       _createItemWidget(slot, item);
+      // print('width:${size.width}, x:$x, y:$y');
       x += widget.slotSize.width + margin.right;
-      if (x + widget.slotSize.width + margin.right > size.width) {
+      if ((x + widget.slotSize.width + margin.right) > size.width) {
         x = margin.left;
         y += widget.slotSize.height + margin.bottom + margin.top;
+      } else if (i == (widget.items.length - 1)) {
+        y += widget.slotSize.height + margin.bottom;
       }
     }
     _maxHeight = y;
-    _changeChildrenMode(widget.draggableMode);
+    // print('_maxHeight $_maxHeight');
+    if (_draggableMode) _start();
     setState(() {});
   }
 
@@ -391,7 +410,7 @@ class DraggableContainerState<T extends DraggableItem>
 
   @override
   onPanStart(DragStartDetails details) {
-    if (!draggableMode) return;
+    if (!_draggableMode) return;
     final DraggableSlot slot = findSlot(details.localPosition);
     final key = relationship[slot];
     if (key == null ||
@@ -411,6 +430,7 @@ class DraggableContainerState<T extends DraggableItem>
 
   @override
   onPanUpdate(DragUpdateDetails details) {
+    // print('onPanUpdate ${details.delta}');
     if (pickUp != null) {
       // 移动抓起的item
       pickUp.currentState.position += details.delta;
@@ -452,14 +472,14 @@ class DraggableContainerState<T extends DraggableItem>
       // 从前往后拖动
       relationship[toSlot] = null;
       toSlot = to;
-      // print('从前往后拖动: 从 $start 到 $end');
+      print('从前往后拖动: 从 $start 到 $end');
       if (fromIndex == start) {
         reorder(start: start, end: end + 1);
         relationship[toSlot] = pickUp;
       }
       // 将后面的item移动到前面
       else {
-        // print('将后面的item移动到前面: 从 $start 到 $end');
+        print('将后面的item移动到前面: 从 $start 到 $end');
         DraggableSlot lastSlot = slots[start], currentSlot;
         GlobalKey<DraggableItemWidgetState> lastKey = relationship[lastSlot],
             currentKey;
@@ -481,7 +501,7 @@ class DraggableContainerState<T extends DraggableItem>
 
   @override
   onPanEnd(_) {
-    if (widget.allWayUseLongPress) gestures.remove(DraggableItemRecognizer);
+//    if (widget.allWayUseLongPress) gestures.remove(DraggableItemRecognizer);
     if (pickUp != null) {
       pickUp.currentState.position = toSlot.position;
       pickUp.currentState.active = false;
@@ -498,28 +518,41 @@ class DraggableContainerState<T extends DraggableItem>
     if (widget.onDragEnd != null) widget.onDragEnd();
   }
 
+  void _start() {
+    print('_start 进入编辑模式');
+    if (widget.allWayUseLongPress) {
+      print('_start 删除 DraggableItemRecognizer');
+      gestures.remove(DraggableItemRecognizer);
+    } else {
+      print('_start 添加 DraggableItemRecognizer');
+      gestures.remove(LongPressGestureRecognizer);
+      gestures[DraggableItemRecognizer] = _draggableItemRecognizer;
+    }
+    if (widget.onDraggableModeChanged != null)
+      widget.onDraggableModeChanged(_draggableMode);
+  }
+
+  void _end() {
+    gestures[LongPressGestureRecognizer] = _longPressRecognizer;
+  }
+
   onLongPressStart(LongPressStartDetails details) {
-    if (draggableMode == false) {
-      // print('进入编辑模式');
+    if (_draggableMode == false) {
       draggableMode = true;
-      if (widget.onDraggableModeChanged != null)
-        widget.onDraggableModeChanged(draggableMode);
       HapticFeedback.lightImpact();
-      _changeChildrenMode(true);
     }
 
-    if (draggableMode || (draggableMode && widget.allWayUseLongPress == true)) {
+    if (_draggableMode ||
+        (_draggableMode && widget.allWayUseLongPress == true)) {
       longPressPosition = details.localPosition;
       onPanStart(DragStartDetails(localPosition: details.localPosition));
     }
 
-    if (widget.allWayUseLongPress == false) {
-      gestures[DraggableItemRecognizer] = _draggableItemRecognizer;
-    }
     setState(() {});
   }
 
   onLongPressMoveUpdate(LongPressMoveUpdateDetails details) {
+    print('onLongPressMoveUpdate');
     onPanUpdate(DragUpdateDetails(
         globalPosition: details.globalPosition,
         delta: details.localPosition - longPressPosition,
@@ -532,7 +565,7 @@ class DraggableContainerState<T extends DraggableItem>
   }
 
   bool isDraggingItem(Offset globalPosition, Offset localPosition) {
-    if (!draggableMode) return false;
+    if (!_draggableMode) return false;
     final slot = findSlot(localPosition);
     final state = relationship[slot]?.currentState;
     if (slot == null || state == null) return false;
@@ -552,33 +585,32 @@ class DraggableContainerState<T extends DraggableItem>
     return true;
   }
 
-  _changeChildrenMode(bool draggableMode) {
+  _changeChildrenMode() {
     relationship.values
-        .forEach((key) => key?.currentState?.draggableMode = draggableMode);
+        .forEach((key) => key?.currentState?.draggableMode = _draggableMode);
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      key: _containerKey,
       constraints: BoxConstraints.expand(height: _maxHeight),
       child: RawGestureDetector(
         behavior: HitTestBehavior.opaque,
         gestures: gestures,
         child: WillPopScope(
           onWillPop: () async {
-            if (draggableMode) {
+            if (pickUp != null) return false;
+            if (_draggableMode) {
               draggableMode = false;
-              // print('退出编辑模式');
-              _changeChildrenMode(false);
               if (widget.onDraggableModeChanged != null)
-                widget.onDraggableModeChanged(draggableMode);
+                widget.onDraggableModeChanged(_draggableMode);
               setState(() {});
               return false;
             }
             return true;
           },
           child: Stack(
-            key: _containerKey,
             children: [...relationship.keys, ...layers],
           ),
         ),

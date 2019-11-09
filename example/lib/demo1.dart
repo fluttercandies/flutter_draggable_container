@@ -40,7 +40,7 @@ class DemoWidget extends StatelessWidget {
                   size: 20,
                 ),
                 label: Text(
-                  'Locked',
+                  '',
                   style: TextStyle(fontSize: 12),
                 ))),
       ),
@@ -68,9 +68,9 @@ class DemoWidget extends StatelessWidget {
         Card(
           child: Container(
             child: DraggableContainer(
-//              draggableMode: true,
-              autoReorder: true,
-//              allWayUseLongPress: true,
+              draggableMode: true,
+               autoReorder: false,
+              // allWayUseLongPress: true,
               // slot decoration
               slotDecoration: BoxDecoration(
                   border: Border.all(width: 2, color: Colors.blue)),
@@ -78,9 +78,9 @@ class DemoWidget extends StatelessWidget {
               dragDecoration: BoxDecoration(
                   boxShadow: [BoxShadow(color: Colors.black, blurRadius: 10)]),
               // slot margin
-              slotMargin: EdgeInsets.all(5),
+              slotMargin: EdgeInsets.all(10),
               // the slot size
-              slotSize: Size(100, 100),
+              slotSize: Size.square(100),
               // when undefined, use the red background white icon button.
               deleteButton: Container(
                 width: 18,
@@ -110,11 +110,9 @@ class DemoWidget extends StatelessWidget {
             ),
           ),
         ),
-        Card(
-          child: Container(
-            height: 1000,
-          ),
-        ),
+        Container(
+          height: 1000,
+        )
       ]),
     );
   }
