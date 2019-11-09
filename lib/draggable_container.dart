@@ -469,29 +469,32 @@ class DraggableContainerState<T extends DraggableItem>
     // 多个移动
     else if (end - start > 1) {
       // print('跨多个slot');
-      // 从前往后拖动
       relationship[toSlot] = null;
       toSlot = to;
-      print('从前往后拖动: 从 $start 到 $end');
       if (fromIndex == start) {
-        reorder(start: start, end: end + 1);
-        relationship[toSlot] = pickUp;
-      }
-      // 将后面的item移动到前面
-      else {
+        // 从前往后拖动
+        print('从前往后拖动: 从 $start 到 $end');
+        if (widget.autoReorder || relationship[toSlot] != null) {
+          reorder(start: start, end: end + 1);
+          relationship[toSlot] = pickUp;
+        }
+      } else {
+        // 将后面的item移动到前面
         print('将后面的item移动到前面: 从 $start 到 $end');
         DraggableSlot lastSlot = slots[start], currentSlot;
         GlobalKey<DraggableItemWidgetState> lastKey = relationship[lastSlot],
             currentKey;
-        relationship[toSlot] = null;
-        for (var i = start + 1; i <= end; i++) {
-          currentSlot = slots[i];
-          currentKey = relationship[currentSlot];
-          // print('i: $i ,${currentItem?.item.toString()}');
-          if (currentKey?.currentState?.item?.fixed == true) continue;
-          relationship[currentSlot] = lastKey;
-          lastKey?.currentState?.position = currentSlot.position;
-          lastKey = currentKey;
+        if (widget.autoReorder || relationship[toSlot] != null) {
+          relationship[toSlot] = null;
+          for (var i = start + 1; i <= end; i++) {
+            currentSlot = slots[i];
+            currentKey = relationship[currentSlot];
+            // print('i: $i ,${currentItem?.item.toString()}');
+            if (currentKey?.currentState?.item?.fixed == true) continue;
+            relationship[currentSlot] = lastKey;
+            lastKey?.currentState?.position = currentSlot.position;
+            lastKey = currentKey;
+          }
         }
         setState(() {});
       }
