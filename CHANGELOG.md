@@ -1,3 +1,7 @@
+### [0.1.7]
+
+Fixed a issue.
+
 ### [0.1.6+3]
 
 Fixed a issue of reorder error when autoReorder = false.

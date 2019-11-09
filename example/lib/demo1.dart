@@ -70,7 +70,7 @@ class DemoWidget extends StatelessWidget {
             child: DraggableContainer(
               draggableMode: true,
                autoReorder: false,
-              // allWayUseLongPress: true,
+//               allWayUseLongPress: true,
               // slot decoration
               slotDecoration: BoxDecoration(
                   border: Border.all(width: 2, color: Colors.blue)),

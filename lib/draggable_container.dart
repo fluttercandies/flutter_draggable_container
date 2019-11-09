@@ -121,11 +121,8 @@ class DraggableContainerState<T extends DraggableItem>
   set draggableMode(bool value) {
     // print('draggableMode $value');
     _draggableMode = value;
-    if (value)
-      _start();
-    else
-      _end();
-    _changeChildrenMode();
+    _setGestures();
+    _updateChildren();
   }
 
   @override
@@ -171,10 +168,6 @@ class DraggableContainerState<T extends DraggableItem>
         ..onPanUpdate = onPanUpdate
         ..onPanEnd = onPanEnd;
     });
-
-    if (_draggableMode && !widget.allWayUseLongPress) {
-      gestures[DraggableItemRecognizer] = _draggableItemRecognizer;
-    }
 
     WidgetsBinding.instance.addPostFrameCallback(_initItems);
   }
@@ -261,7 +254,7 @@ class DraggableContainerState<T extends DraggableItem>
     }
     _maxHeight = y;
     // print('_maxHeight $_maxHeight');
-    if (_draggableMode) _start();
+    _setGestures();
     setState(() {});
   }
 
@@ -521,22 +514,22 @@ class DraggableContainerState<T extends DraggableItem>
     if (widget.onDragEnd != null) widget.onDragEnd();
   }
 
-  void _start() {
-    print('_start 进入编辑模式');
-    if (widget.allWayUseLongPress) {
-      print('_start 删除 DraggableItemRecognizer');
-      gestures.remove(DraggableItemRecognizer);
-    } else {
-      print('_start 添加 DraggableItemRecognizer');
-      gestures.remove(LongPressGestureRecognizer);
-      gestures[DraggableItemRecognizer] = _draggableItemRecognizer;
-    }
-    if (widget.onDraggableModeChanged != null)
-      widget.onDraggableModeChanged(_draggableMode);
-  }
+  void _setGestures() {
+    // 长按拖动 gestures[LongPressGestureRecognizer] = _longPressRecognizer;
+    // 普通拖动 gestures[DraggableItemRecognizer] = _draggableItemRecognizer;
 
-  void _end() {
-    gestures[LongPressGestureRecognizer] = _longPressRecognizer;
+    if (_draggableMode) {
+      // 在编辑模式
+      if (widget.allWayUseLongPress) {
+        gestures.remove(DraggableItemRecognizer);
+      } else {
+        gestures[DraggableItemRecognizer] = _draggableItemRecognizer;
+      }
+    } else {
+      // 不在编辑模式
+      gestures[LongPressGestureRecognizer] = _longPressRecognizer;
+      gestures.remove(DraggableItemRecognizer);
+    }
   }
 
   onLongPressStart(LongPressStartDetails details) {
@@ -555,7 +548,7 @@ class DraggableContainerState<T extends DraggableItem>
   }
 
   onLongPressMoveUpdate(LongPressMoveUpdateDetails details) {
-    print('onLongPressMoveUpdate');
+    // print('onLongPressMoveUpdate');
     onPanUpdate(DragUpdateDetails(
         globalPosition: details.globalPosition,
         delta: details.localPosition - longPressPosition,
@@ -588,7 +581,7 @@ class DraggableContainerState<T extends DraggableItem>
     return true;
   }
 
-  _changeChildrenMode() {
+  _updateChildren() {
     relationship.values
         .forEach((key) => key?.currentState?.draggableMode = _draggableMode);
   }
