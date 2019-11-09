@@ -1,3 +1,9 @@
+### [0.1.6+2]
+
+Fixed a draggable mode issue.
+
+Add onDragEnd event.
+
 ### [0.1.6+1]
 
 Fixed: when second times enter the draggable mode, the draggable item move faster than finger

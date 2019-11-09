@@ -88,7 +88,7 @@ class _DemoWidget3 extends State<DemoWidget3> {
             key: _containerKey,
 //              draggableMode: true,
             autoReorder: true,
-//              allWayUseLongPress: true,
+            allWayUseLongPress: true,
             // slot decoration
             slotDecoration:
                 BoxDecoration(border: Border.all(width: 2, color: Colors.blue)),

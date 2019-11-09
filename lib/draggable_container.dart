@@ -51,6 +51,7 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
   final Function(List<T> items) onChanged;
   final Function(bool mode) onDraggableModeChanged;
   final Future<bool> Function(int index, T item) onBeforeDelete;
+  final Function onDragEnd;
   final bool draggableMode, autoReorder;
   final Offset deleteButtonPosition;
   final Duration animateDuration;
@@ -67,9 +68,12 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
     this.slotDecoration,
     this.dragDecoration,
     this.autoReorder: true,
+
+    /// events
     this.onChanged,
     this.onDraggableModeChanged,
     this.onBeforeDelete,
+    this.onDragEnd,
 
     /// Enter draggable mode as soon as possible
     this.draggableMode: false,
@@ -477,7 +481,7 @@ class DraggableContainerState<T extends DraggableItem>
 
   @override
   onPanEnd(_) {
-    gestures.remove(DraggableItemRecognizer);
+    if (widget.allWayUseLongPress) gestures.remove(DraggableItemRecognizer);
     if (pickUp != null) {
       pickUp.currentState.position = toSlot.position;
       pickUp.currentState.active = false;
@@ -491,6 +495,7 @@ class DraggableContainerState<T extends DraggableItem>
     _dragBeforeList.clear();
 
     setState(() {});
+    if (widget.onDragEnd != null) widget.onDragEnd();
   }
 
   onLongPressStart(LongPressStartDetails details) {
