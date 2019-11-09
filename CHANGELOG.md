@@ -1,8 +1,10 @@
+### [0.1.6+3]
+
+Fixed a issue of reorder error when autoReorder = false.
+
 ### [0.1.6+2]
 
 Fixed a draggable mode issue.
-
-Fixed a issue of reorder error when autoReorder = false.
 
 Add onDragEnd event.
 
