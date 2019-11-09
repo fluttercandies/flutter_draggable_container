@@ -1,3 +1,7 @@
+### [0.1.7+1]
+
+Set the stack.overflow to Overflow.visible.
+
 ### [0.1.7]
 
 Fixed a issue.

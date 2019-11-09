@@ -607,6 +607,7 @@ class DraggableContainerState<T extends DraggableItem>
             return true;
           },
           child: Stack(
+            overflow: Overflow.visible,
             children: [...relationship.keys, ...layers],
           ),
         ),
