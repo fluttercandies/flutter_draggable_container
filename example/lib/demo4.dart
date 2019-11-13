@@ -37,7 +37,7 @@ class _DemoWidget3 extends State<Demo4> {
                   _count++;
                 else
                   showSnackBar(
-                      'The container is full, you can add slots and add items');
+                      'The container was full, you can add slots and add items');
               },
               textColor: Colors.white,
               icon: Icon(

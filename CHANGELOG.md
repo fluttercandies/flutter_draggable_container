@@ -12,6 +12,8 @@ Methods changed name:
  
 Add the addSlot, addSlots, removeSlot methods tester.
 
+Add LoopCheck class to wait the widget build
+
 ### [0.1.7+1]
 
 Set the stack.overflow to Overflow.visible.
