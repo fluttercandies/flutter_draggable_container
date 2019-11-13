@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:draggable_container/draggable_container.dart';
 import 'utils.dart';
 
-class DemoWidget2 extends StatefulWidget {
+class Demo2 extends StatefulWidget {
   @override
   _DemoWidget2 createState() => _DemoWidget2();
 
@@ -12,7 +12,7 @@ class DemoWidget2 extends StatefulWidget {
   }
 }
 
-class _DemoWidget2 extends State<DemoWidget2> {
+class _DemoWidget2 extends State<Demo2> {
   final GlobalKey<ScaffoldState> _key = GlobalKey();
   final GlobalKey<DraggableContainerState> _containerKey = GlobalKey();
   final items = <DraggableItem>[];
@@ -28,21 +28,24 @@ class _DemoWidget2 extends State<DemoWidget2> {
       child: Container(
           child: RaisedButton.icon(
               color: Colors.orange,
-              onPressed: () {
-                final buttonIndex =
-                    _containerKey.currentState.items.indexOf(_addButton);
-                final nullIndex =
-                    _containerKey.currentState.items.indexOf(null);
-                print('add $nullIndex $buttonIndex');
-                if (nullIndex > -1 && buttonIndex > -1) {
-                  _containerKey.currentState
-                      .moveTo(buttonIndex, nullIndex, triggerEvent: false);
-                }
+              onPressed: () async {
+                final items = _containerKey.currentState.items;
+                final buttonIndex = items.indexOf(_addButton),
+                    nullIndex = items.indexOf(null);
+
+                /// use new item to instead of the button position
                 if (buttonIndex > -1) {
-                  _containerKey.currentState.insteadOfIndex(buttonIndex,
-                      MyItem(key: _count.toString(), index: _count),
+                  await _containerKey.currentState.insteadOfIndex(
+                      buttonIndex, MyItem(index: _count),
                       force: true, triggerEvent: false);
                   _count++;
+
+                  /// use the button instead of the first null position
+                  if (nullIndex > -1) {
+                    await _containerKey.currentState.insteadOfIndex(
+                        nullIndex, _addButton,
+                        force: true, triggerEvent: false);
+                  }
                 }
               },
               textColor: Colors.white,
@@ -91,35 +94,24 @@ class _DemoWidget2 extends State<DemoWidget2> {
                 slotSize: Size(100, 100),
                 // item list
                 items: items,
-                onDragEnd: () {
-                  _containerKey.currentState.draggableMode = false;
-                },
-                onChanged: (items) {
+                // onDragEnd: () {
+                //   _containerKey.currentState.draggableMode = false;
+                // },
+                onChanged: (items) async {
                   final nullIndex = items.indexOf(null);
                   final buttonIndex = items.indexOf(_addButton);
-                  // print('null $nullIndex, button $buttonIndex');
-                  if (nullIndex > -1 && buttonIndex == -1) {
-                    _containerKey.currentState.insteadOfIndex(
-                        nullIndex, _addButton,
-                        triggerEvent: false);
-                  } else if (nullIndex > -1 &&
-                      buttonIndex > -1 &&
-                      nullIndex < buttonIndex) {
-                    _containerKey.currentState
-                        .moveTo(buttonIndex, nullIndex, triggerEvent: false);
+                  if (nullIndex > -1) {
+                    if (buttonIndex == -1) {
+                      await _containerKey.currentState.insteadOfIndex(
+                          nullIndex, _addButton,
+                          triggerEvent: false);
+                    } else if (nullIndex < buttonIndex) {
+                      _containerKey.currentState
+                          .moveTo(buttonIndex, nullIndex, triggerEvent: false);
+                    }
                   }
                 },
               ),
-            ),
-          ),
-          Card(
-            child: FlatButton(
-              onPressed: () {
-                items.add(DraggableItem(child: Text('hi')));
-                print('length ${items.length}');
-                setState(() {});
-              },
-              child: Text('增加Item'),
             ),
           ),
         ],

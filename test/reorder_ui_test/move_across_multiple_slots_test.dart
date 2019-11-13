@@ -40,7 +40,9 @@ void main() {
     expect(state.pickUp, from);
     await gesture.moveTo(to.currentState.position + Offset(10, 10));
     await gesture.up();
-    expect(getWidgetsIndex(state.relationship), [1, 2, 3, 0, 4, 5, 6, 7, 8]);
+    await tester.pump();
+    expect(state.items.map((item) => item.index).toList(),
+        [1, 2, 3, 0, 4, 5, 6, 7, 8]);
     expect([from.currentState.position, to.currentState.position],
         [Offset(0, 100), Offset(200, 0)]);
   });

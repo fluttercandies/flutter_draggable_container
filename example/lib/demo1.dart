@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'utils.dart';
 
-class DemoWidget extends StatelessWidget {
+class Demo1 extends StatelessWidget {
   final GlobalKey<ScaffoldState> _key = GlobalKey();
 
   void showSnackBar(String text) {
@@ -69,7 +69,7 @@ class DemoWidget extends StatelessWidget {
           child: Container(
             child: DraggableContainer(
               draggableMode: true,
-               autoReorder: false,
+               autoReorder: true,
 //               allWayUseLongPress: true,
               // slot decoration
               slotDecoration: BoxDecoration(

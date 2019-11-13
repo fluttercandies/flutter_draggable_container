@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 
 import 'utils.dart';
 
-class DemoWidget3 extends StatefulWidget {
+class Demo3 extends StatefulWidget {
   @override
   State<StatefulWidget> createState() => _DemoWidget3();
 }
 
-class _DemoWidget3 extends State<DemoWidget3> {
+class _DemoWidget3 extends State<Demo3> {
   final GlobalKey<ScaffoldState> _key = GlobalKey();
   final GlobalKey<DraggableContainerState> _containerKey = GlobalKey();
   DraggableItem _addButton;

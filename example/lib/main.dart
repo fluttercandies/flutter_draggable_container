@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import './demo1.dart';
 import './demo2.dart';
 import './demo3.dart';
+import 'demo4.dart';
 
 void main() {
 //  debugPrintGestureArenaDiagnostics = true;
@@ -38,7 +39,7 @@ class _AppState extends State<App> {
                   textColor: Colors.white,
                   onPressed: () {
                     Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => DemoWidget()));
+                        MaterialPageRoute(builder: (_) => Demo1()));
                   },
                 ),
               ],
@@ -62,7 +63,7 @@ class _AppState extends State<App> {
                   textColor: Colors.white,
                   onPressed: () {
                     Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => DemoWidget2()));
+                        MaterialPageRoute(builder: (_) => Demo2()));
                   },
                 ),
               ],
@@ -86,7 +87,31 @@ class _AppState extends State<App> {
                   textColor: Colors.white,
                   onPressed: () {
                     Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => DemoWidget3()));
+                        MaterialPageRoute(builder: (_) => Demo3()));
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        Card(
+          child: Padding(
+            padding: EdgeInsets.only(left: 5, right: 5),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Container(
+                  padding: EdgeInsets.only(top: 5),
+                  child: Text('Manually add the slot, remove the slot'),
+                ),
+                RaisedButton(
+                  child: Text('Demo 4'),
+                  color: Colors.red,
+                  textColor: Colors.white,
+                  onPressed: () {
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => Demo4()));
                   },
                 ),
               ],

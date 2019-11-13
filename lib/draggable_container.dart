@@ -7,10 +7,30 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/scheduler.dart';
 
-Iterable<int> range(int start, int end) sync* {
-  for (int i = start; i < end; ++i) {
-    yield i;
+class LoopCheck {
+  LoopCheck._();
+
+  bool _stop = false;
+  Duration _step;
+
+  factory LoopCheck.check({int stepMilliSeconds = 100}) {
+    var check = LoopCheck._();
+    check._step = Duration(microseconds: stepMilliSeconds);
+    return check;
+  }
+
+  Future<void> start() async {
+    while (!_stop) {
+      // print('$_stop');
+      await Future.delayed(_step);
+    }
+    return Future.value();
+  }
+
+  void stop() {
+    _stop = true;
   }
 }
 
@@ -56,7 +76,7 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
   final Offset deleteButtonPosition;
   final Duration animateDuration;
   final bool allWayUseLongPress;
-  final List<DraggableItem> items;
+  final List<T> items;
   final Widget deleteButton;
 
   DraggableContainer({
@@ -112,8 +132,9 @@ class DraggableContainerState<T extends DraggableItem>
   Offset longPressPosition;
   GestureRecognizerFactory _longPressRecognizer, _draggableItemRecognizer;
   double _maxHeight = 0;
+  bool autoReorder = true;
 
-  List get items => List.from(
+  List<T> get items => List.from(
       relationship.values.map((globalKey) => globalKey?.currentState?.item));
 
   get draggableMode => _draggableMode;
@@ -129,6 +150,8 @@ class DraggableContainerState<T extends DraggableItem>
   void initState() {
     super.initState();
     deleteButton = widget.deleteButton;
+    autoReorder = widget.autoReorder;
+    _draggableMode = widget.draggableMode;
     if (deleteButton == null)
       deleteButton = Container(
         width: 14,
@@ -169,7 +192,8 @@ class DraggableContainerState<T extends DraggableItem>
         ..onPanEnd = onPanEnd;
     });
 
-    WidgetsBinding.instance.addPostFrameCallback(_initItems);
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _initItems(widget.items));
   }
 
   void _createItemWidget(DraggableSlot slot, T item) {
@@ -218,9 +242,8 @@ class DraggableContainerState<T extends DraggableItem>
         -1;
   }
 
-  void _initItems(_) {
+  void _initItems(List<T> items) {
     // print('initItems');
-    _draggableMode = widget.draggableMode;
     relationship.clear();
     layers.clear();
     final RenderBox renderBoxRed =
@@ -229,8 +252,8 @@ class DraggableContainerState<T extends DraggableItem>
     // print('size $size');
     EdgeInsets margin = widget.slotMargin ?? EdgeInsets.all(0);
     double x = margin.left, y = margin.top;
-    for (var i = 0; i < widget.items.length; i++) {
-      final item = widget.items[i];
+    for (var i = 0; i < items.length; i++) {
+      final item = items[i];
       final Offset position = Offset(x, y),
           maxPosition =
               Offset(x + widget.slotSize.width, y + widget.slotSize.height);
@@ -248,7 +271,7 @@ class DraggableContainerState<T extends DraggableItem>
       if ((x + widget.slotSize.width + margin.right) > size.width) {
         x = margin.left;
         y += widget.slotSize.height + margin.bottom + margin.top;
-      } else if (i == (widget.items.length - 1)) {
+      } else if (i == (items.length - 1)) {
         y += widget.slotSize.height + margin.bottom;
       }
     }
@@ -258,7 +281,7 @@ class DraggableContainerState<T extends DraggableItem>
     setState(() {});
   }
 
-  bool deleteIndex(int index, {bool triggerEvent: true}) {
+  bool removeIndex(int index, {bool triggerEvent: true}) {
     if (index < 0 || index >= relationship.length) return false;
     final entries = relationship.entries;
     for (var i = 0; i < entries.length; i++) {
@@ -267,7 +290,7 @@ class DraggableContainerState<T extends DraggableItem>
       if (kv.value == null) return false;
       relationship[kv.key] = null;
       layers.remove(kv.value?.currentWidget);
-      if (widget.autoReorder) reorder();
+      if (autoReorder) reorder();
       setState(() {});
       if (triggerEvent) _triggerOnChanged();
       return true;
@@ -275,13 +298,13 @@ class DraggableContainerState<T extends DraggableItem>
     return false;
   }
 
-  bool deleteItem(T item, {bool triggerEvent: true}) {
+  bool removeItem(T item, {bool triggerEvent: true}) {
     final entries = relationship.entries;
     for (var kv in entries) {
       if (kv.value?.currentState?.item == item) {
         layers.remove(kv.value.currentWidget);
         relationship[kv.key] = null;
-        if (widget.autoReorder) reorder();
+        if (autoReorder) reorder();
         setState(() {});
         if (triggerEvent) _triggerOnChanged();
         return true;
@@ -290,8 +313,43 @@ class DraggableContainerState<T extends DraggableItem>
     return false;
   }
 
-  bool insteadOfIndex(int index, T item,
-      {bool triggerEvent: true, bool force: false}) {
+  Future<void> _wait() async {
+    final loop = LoopCheck.check();
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      loop.stop();
+    });
+    await loop.start();
+  }
+
+  Future<void> addSlot({T item, bool triggerEvent: true}) async {
+    final items = this.items;
+    items.add(item);
+    _initItems(items);
+    await _wait();
+    if (autoReorder) reorder();
+    if (triggerEvent) _triggerOnChanged();
+  }
+
+  Future<void> addSlots(int count, {bool triggerEvent: true}) async {
+    final res = this.items;
+    res.addAll(List.generate(count, (i) => null));
+    _initItems(res);
+    await _wait();
+    if (triggerEvent) _triggerOnChanged();
+  }
+
+  Future<T> popSlot({bool triggerEvent: true}) async {
+    final items = this.items;
+    final last = items.last;
+    items.removeAt(items.length - 1);
+    _initItems(items);
+    await _wait();
+    if (triggerEvent) _triggerOnChanged();
+    return last;
+  }
+
+  Future<bool> insteadOfIndex(int index, T item,
+      {bool triggerEvent: true, bool force: false}) async {
     final slots = relationship.keys;
     if (index < 0 || slots.length <= index) return false;
     final slot = slots.elementAt(index);
@@ -299,9 +357,10 @@ class DraggableContainerState<T extends DraggableItem>
       return false;
     layers.remove(relationship[slot]?.currentWidget);
     _createItemWidget(slot, item);
-    if (widget.autoReorder) reorder();
-    setState(() {});
+    await _wait();
+    if (autoReorder) reorder();
     if (triggerEvent) _triggerOnChanged();
+    setState(() {});
     return true;
   }
 
@@ -339,7 +398,7 @@ class DraggableContainerState<T extends DraggableItem>
     }
     final kv = relationship.entries.elementAt(index);
     relationship[kv.key] = null;
-    if (widget.autoReorder) reorder();
+    if (autoReorder) reorder();
     setState(() {});
     layers.remove(kv.value?.currentWidget);
     _triggerOnChanged();
@@ -467,7 +526,7 @@ class DraggableContainerState<T extends DraggableItem>
       if (fromIndex == start) {
         // 从前往后拖动
         print('从前往后拖动: 从 $start 到 $end');
-        if (widget.autoReorder || relationship[toSlot] != null) {
+        if (autoReorder || relationship[toSlot] != null) {
           reorder(start: start, end: end + 1);
           relationship[toSlot] = pickUp;
         }
@@ -477,7 +536,7 @@ class DraggableContainerState<T extends DraggableItem>
         DraggableSlot lastSlot = slots[start], currentSlot;
         GlobalKey<DraggableItemWidgetState> lastKey = relationship[lastSlot],
             currentKey;
-        if (widget.autoReorder || relationship[toSlot] != null) {
+        if (autoReorder || relationship[toSlot] != null) {
           relationship[toSlot] = null;
           for (var i = start + 1; i <= end; i++) {
             currentSlot = slots[i];
@@ -504,7 +563,7 @@ class DraggableContainerState<T extends DraggableItem>
     }
     pickUp = toSlot = null;
     if (listEquals(_dragBeforeList, relationship.values.toList()) == false) {
-      if (widget.autoReorder) reorder();
+      if (autoReorder) reorder();
       // print('changed');
       _triggerOnChanged();
     }

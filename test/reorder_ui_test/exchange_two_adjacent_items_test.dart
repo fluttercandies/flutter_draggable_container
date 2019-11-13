@@ -17,13 +17,15 @@ import '../utils.dart';
 
 void main() {
   testWidgets('Echange 0 and 1', (WidgetTester tester) async {
-    DraggableContainerState<TestDraggableItem> state = await createContainer(tester);
+    DraggableContainerState<TestDraggableItem> state =
+        await createContainer(tester);
     expect(state.layers[8].position, Offset(200, 200));
     expect(state.draggableMode, false);
     expect(state.pickUp, null);
 
     /// Move 0 to 1
-    GlobalKey<DraggableItemWidgetState<TestDraggableItem>> from = state.relationship.entries.elementAt(0).value,
+    GlobalKey<DraggableItemWidgetState<TestDraggableItem>> from =
+            state.relationship.entries.elementAt(0).value,
         to = state.relationship.entries.elementAt(1).value;
     TestGesture gesture = await tester.startGesture(Offset(50, 50));
     await tester.pump(kLongPressTimeout);
@@ -37,22 +39,27 @@ void main() {
       ],
       [Offset(0, 0), Offset(100, 0)],
     );
+    expect([state.items[0].index, state.items[1].index], [1, 0]);
 
     /// Move 1 to 0
     from = state.relationship.entries.elementAt(1).value;
     to = state.relationship.entries.elementAt(0).value;
-    gesture = await tester.startGesture(from.currentState.position + Offset(10, 10));
+    gesture =
+        await tester.startGesture(from.currentState.position + Offset(10, 10));
     await tester.pump(kLongPressTimeout);
     expect(state.pickUp, from);
     await gesture.moveTo(to.currentState.position + Offset(10, 10));
     await gesture.up();
-    expect([from.currentState.position, to.currentState.position], [Offset(0, 0), Offset(100, 0)]);
+    expect([from.currentState.position, to.currentState.position],
+        [Offset(0, 0), Offset(100, 0)]);
     expect([from.currentState.item.index, to.currentState.item.index], [0, 1]);
+    expect([state.items[0].index, state.items[1].index], [0, 1]);
 
     /// Move 0 to 1 and move to back
     from = state.relationship.entries.elementAt(0).value;
     to = state.relationship.entries.elementAt(1).value;
-    gesture = await tester.startGesture(from.currentState.position + Offset(10, 10));
+    gesture =
+        await tester.startGesture(from.currentState.position + Offset(10, 10));
     await tester.pump(kLongPressTimeout);
     expect(state.pickUp, from);
     await gesture.moveTo(Offset(150, 50));
@@ -72,7 +79,8 @@ void main() {
       to
     ]);
     await gesture.up();
-    expect([from.currentState.position, to.currentState.position], [Offset(0, 0), Offset(100, 0)]);
+    expect([from.currentState.position, to.currentState.position],
+        [Offset(0, 0), Offset(100, 0)]);
     expect([from.currentState.item.index, to.currentState.item.index], [0, 1]);
   });
 

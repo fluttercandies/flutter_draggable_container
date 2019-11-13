@@ -23,14 +23,14 @@ void main() {
 
     final item1 = TestDraggableItem(100, deletable: false),
         item2 = TestDraggableItem(200);
-    expect(state.insteadOfIndex(0, item1), true);
-    await tester.pump();
-    expect(
-        state.relationship.entries.elementAt(0).value.currentState.item, item1);
+    state.insteadOfIndex(0, item1);
+    await tester.pump(Duration(seconds: 1));
+    expect(state.items[0], item1);
 
-    expect(state.insteadOfIndex(0, item2), false);
-    expect(state.insteadOfIndex(0, item2, force: true), true);
-    await tester.pump();
+    state.insteadOfIndex(0, item2);
+    await tester.pump(Duration(seconds: 1));
+    state.insteadOfIndex(0, item2, force: true);
+    await tester.pump(Duration(seconds: 1));
     expect(
         state.relationship.entries.elementAt(0).value.currentState.item, item2);
   });
@@ -39,24 +39,23 @@ void main() {
     DraggableContainerState state = await createContainer(tester);
 
     expect(state.layers[8].position, Offset(200, 200));
-    final item = state.relationship.entries.elementAt(0).value.currentState.item;
+    final item =
+        state.relationship.entries.elementAt(0).value.currentState.item;
     expect(state.moveTo(0, 1), true);
-    expect(state.relationship.entries.elementAt(0).value, null);
-    expect(state.relationship.entries.elementAt(1).value.currentState.item, item);
+    expect(state.items[0], null);
+    expect(state.items[1], item);
 
     final item1 = TestDraggableItem(100, deletable: false);
-    expect(state.insteadOfIndex(0, item1), true);
-    await tester.pump();
-    expect(
-        state.relationship.entries.elementAt(0).value.currentState.item, item1);
+    state.insteadOfIndex(0, item1);
+    await tester.pump(Duration(seconds: 1));
+    expect(state.items[0], item1);
 
     // move fail, because the 0th item not allow delete.
     expect(state.moveTo(1, 0), false);
-    expect(
-        state.relationship.entries.elementAt(0).value.currentState.item, item1);
+    expect(state.items[0], item1);
 
     // force to move
     expect(state.moveTo(1, 0, force: true), true);
-    expect(state.relationship.entries.elementAt(0).value.currentState.item, item);
+    expect(state.items[0], item);
   });
 }

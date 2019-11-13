@@ -1,3 +1,17 @@
+### [0.1.8]
+
+Add two methods:
+
+- Future<void> addSlot
+- Future<void> addSlots(int count)
+- Future<T extends DraggableItem> popSlot()
+
+Methods changed name:
+- deleteItem -> removeItem
+- deleteIndex -> removeIndex
+ 
+Add the addSlot, addSlots, removeSlot methods tester.
+
 ### [0.1.7+1]
 
 Set the stack.overflow to Overflow.visible.
