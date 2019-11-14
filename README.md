@@ -83,6 +83,7 @@ All T is mean T extends DraggableItem
         - Add item, always add to the first null position, if can't find null, return false it mean to add failure.
     
 Parameters:
+
     - bool triggerEvent:
         - 是否触发onChanged事件
         - Trigger the onChanged event or not
