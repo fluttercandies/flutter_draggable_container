@@ -1,7 +1,12 @@
-### [0.1.8]
+### [0.1.8+2]
+
+Update document
+
+### [0.1.8+1]
 
 补全文档
 Completion document
+
 
 ### [0.1.8]
 
