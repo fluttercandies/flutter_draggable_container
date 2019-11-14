@@ -1,5 +1,10 @@
 ### [0.1.8]
 
+补全文档
+Completion document
+
+### [0.1.8]
+
 Add two methods:
 
 - Future<void> addSlot

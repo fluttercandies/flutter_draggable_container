@@ -35,13 +35,57 @@
     - 返回键 退出编辑模式
     - Press the Back key to exit the draggable mode.
     
+下文的T意味着 T extends DraggableItem
+All T is mean T extends DraggableItem
+    
 - 事件 / Events
-    - onChanged(List\<T extends DraggableItem\> items)
+    - onChanged(List\<T\> items)
         - 当子项目改变时触发(拖动过后，删除后)
         - Trigger when the items changed(dragged, deleted)
     - onDraggableModeChanged(bool mode)
         - mode为true则进入了编辑模式，为false则退出了编辑模式.
         - When mode is true then in the draggable mode. If false it mean exited the draggable mode.
-    - Future\<bool\> onBeforeDelete(int index, DraggableItem item)
+    - Future\<bool\> onBeforeDelete(int index, T item)
         - 删除item的确认事件，返回true删除，返回false不删除
         - The event for confirm to delete a item, if return true then delete, if false then no action.
+
+- DraggableContainerState的方法 / The DraggableContainerState methods:
+    - Future<void> addSlot({T item, bool triggerEvent: true})
+        - 添加一个新的槽。        
+        - Add a new slot.
+    - Future<void> addSlots(int count, {bool triggerEvent: true})
+        - 添加多个槽，用对应数量的null填充
+        - Add multiple slots and fill with null.    
+    - Future<T> popSlot()
+        - 移除最后一个槽位，返回对应的item
+        - Remove the last slot and return the item.
+    - findSlot(Offset position)
+        - 根本坐标寻找槽
+        - find the slot use Offset position.
+        
+    - T getItem(int index)
+        - 使用index获取item，空的槽item为null
+        - Use index get item, the empty slot's item is null.
+    - bool insteadOfIndex(int index, T item, {bool triggerEvent: true, bool force: false})
+        - 使用item替换到index的位置
+        - Use item to instead of the index position.
+    - bool moveTo(int from, int to, {bool triggerEvent: true, bool force: false})
+        - 将item从from移动到to
+        - Move the item from the 'from' index to the 'to' index.
+    - bool removeItem(T item, {bool triggerEvent: true})
+        - 根据item删除item
+        - Delete item according to item
+    - bool removeIndex(int index, {bool triggerEvent: true})
+        - 删除index位置的item
+        - Delete item from the index position.
+    - bool addItem(T item, {bool triggerEvent: true})
+        - 添加item，永远添加到第一个null的位置，找不到null则返回false代表添加失败
+        - Add item, always add to the first null position, if can't find null, return false it mean to add failure.
+    
+Parameters:
+    - bool triggerEvent:
+        - 是否触发onChanged事件
+        - Trigger the onChanged event or not
+    - bool force:
+        - 如果目标item的deletable为false，则强制覆盖
+        - Forced override if the target item's deleteable is false
