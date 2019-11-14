@@ -35,8 +35,12 @@
     - 返回键 退出编辑模式
     - Press the Back key to exit the draggable mode.
     
-下文的T意味着 T extends DraggableItem
-All T is mean T extends DraggableItem
+
+
+```
+下文中的T意味着T extends DraggableItem
+In the following, T means T extends DraggableItem
+```
     
 - 事件 / Events
     - onChanged(List\<T\> items)
