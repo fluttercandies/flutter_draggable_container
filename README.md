@@ -82,8 +82,7 @@ All T is mean T extends DraggableItem
         - 添加item，永远添加到第一个null的位置，找不到null则返回false代表添加失败
         - Add item, always add to the first null position, if can't find null, return false it mean to add failure.
     
-Parameters:
-
+- 关于上文提到的参数 / About the Parameters:
     - bool triggerEvent:
         - 是否触发onChanged事件
         - Trigger the onChanged event or not
