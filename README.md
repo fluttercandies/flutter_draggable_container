@@ -54,17 +54,17 @@ In the following, T means T extends DraggableItem
         - The event for confirm to delete a item, if return true then delete, if false then no action.
 
 - DraggableContainerState的方法 / The DraggableContainerState methods:
-    - Future<void> addSlot({T item, bool triggerEvent: true})
+    - Future\<void\> addSlot({T item, bool triggerEvent: true})
         - 添加一个新的槽。        
         - Add a new slot.
-    - Future<void> addSlots(int count, {bool triggerEvent: true})
+    - Future\<void\> addSlots(int count, {bool triggerEvent: true})
         - 添加多个槽，用对应数量的null填充
         - Add multiple slots and fill with null.    
-    - Future<T> popSlot()
+    - Future\<T\> popSlot()
         - 移除最后一个槽位，返回对应的item
         - Remove the last slot and return the item.
     - findSlot(Offset position)
-        - 根本坐标寻找槽
+        - 根据坐标寻找槽
         - find the slot use Offset position.
         
     - T getItem(int index)
