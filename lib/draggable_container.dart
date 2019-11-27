@@ -144,6 +144,8 @@ class DraggableContainerState<T extends DraggableItem>
     _draggableMode = value;
     _setGestures();
     _updateChildren();
+    if (widget.onDraggableModeChanged != null)
+      widget.onDraggableModeChanged(value);
   }
 
   @override
@@ -658,8 +660,6 @@ class DraggableContainerState<T extends DraggableItem>
             if (pickUp != null) return false;
             if (_draggableMode) {
               draggableMode = false;
-              if (widget.onDraggableModeChanged != null)
-                widget.onDraggableModeChanged(_draggableMode);
               setState(() {});
               return false;
             }

@@ -1,3 +1,7 @@
+### [0.1.8+5]
+
+Fixed the trigger logic for the onDraggableModeChanged.
+
 ### [0.1.8+4]
 
 Update document
