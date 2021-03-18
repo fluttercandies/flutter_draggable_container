@@ -2,13 +2,13 @@ name: draggable_container
 description:
   A Draggable Widget Container.
   Each children is Draggable, Deletable and Fixable.
-version: 0.1.8+5
+version: 1.0.0
 author: gzlock <gzlock88@gmail.com>
 homepage: https://github.com/gzlock/flutter_draggable_container
 repository: https://github.com/gzlock/flutter_draggable_container
 
 environment:
-  sdk: ">=2.3.0 <3.0.0"
+  sdk: ">=2.12.0 <3.0.0"
 
 dependencies:
   flutter:
