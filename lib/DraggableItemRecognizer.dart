@@ -4,10 +4,9 @@ import 'package:flutter/widgets.dart';
 
 class DraggableItemRecognizer extends OneSequenceGestureRecognizer {
   late Function onPanStart, onPanUpdate, onPanEnd;
-  late bool Function(Offset globalPosition, Offset localPosition) isHitItem;
+  late bool Function(Offset globalPosition) isHitItem;
   late bool Function() isDraggingItem;
   final DraggableContainerState containerState;
-  Offset widgetPosition = Offset.zero;
 
   DraggableItemRecognizer({required this.containerState})
       : super(debugOwner: containerState);
@@ -15,29 +14,23 @@ class DraggableItemRecognizer extends OneSequenceGestureRecognizer {
   @override
   void addPointer(PointerDownEvent event) {
     startTrackingPointer(event.pointer);
-    final RenderBox renderBox =
-        containerState.context.findRenderObject() as RenderBox;
-    widgetPosition = renderBox.localToGlobal(Offset.zero);
-    if (isHitItem(event.position, event.localPosition)) {
+    if (isHitItem(event.position)) {
       // print('占用事件');
       resolve(GestureDisposition.accepted);
-    } else
+    } else {
       resolve(GestureDisposition.rejected);
+    }
   }
 
   @override
   void handleEvent(PointerEvent event) {
-    // print('handleEvent');
-    final localPosition = event.position - widgetPosition;
+    // print('handleEvent $event');
     if (event is PointerDownEvent) {
-      if (!isHitItem(event.position, localPosition)) return;
-      onPanStart(DragStartDetails(
-          globalPosition: event.position, localPosition: localPosition));
+      if (!isHitItem(event.position)) return;
+      onPanStart(DragStartDetails(globalPosition: event.position));
     } else if (event is PointerMoveEvent) {
       onPanUpdate(DragUpdateDetails(
-          globalPosition: event.position,
-          localPosition: localPosition,
-          delta: event.delta));
+          globalPosition: event.position, delta: event.delta));
     } else if (event is PointerUpEvent) {
       if (isDraggingItem()) onPanEnd(DragEndDetails());
       stopTrackingPointer(event.pointer);

@@ -21,8 +21,36 @@ class MyApp extends StatelessWidget {
   }
 }
 
+class MyItem extends DraggableItem {
+  final Color color;
+  final int index;
+  final bool _deletable;
+  bool _fixed = false;
+
+  MyItem(this.index)
+      : _fixed = index % 2 == 0,
+        _deletable = index % 2 == 1,
+        color = randomColor();
+
+  @override
+  bool deletable() => _deletable;
+
+  @override
+  bool fixed() => _fixed;
+}
+
 class MyHomePage extends StatelessWidget {
-  final data = List.generate(9, (index) => index.toString());
+  final data = <MyItem>[
+    MyItem(1),
+    MyItem(2),
+    MyItem(3),
+    MyItem(4),
+    null,
+    MyItem(6),
+    MyItem(7),
+    MyItem(8),
+    MyItem(9),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -32,35 +60,52 @@ class MyHomePage extends StatelessWidget {
       ),
       body: ListView(
         children: [
-          Card(child: Text('hi')),
-          DraggableContainer(
+          Container(
+            height: 30,
+            color: Colors.red,
+            child: Text('hi'),
+          ),
+          DraggableContainer<MyItem>(
+            items: data,
+            itemCount: 9,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
             ),
+            // gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            //   maxCrossAxisExtent: 150,
+            //   crossAxisSpacing: 10,
+            //   mainAxisSpacing: 10,
+            // ),
             padding: EdgeInsets.all(10),
-            itemCount: data.length,
-            isFixed: (index) => index == 4,
-            isDeletable: (index) => index % 2 == 0,
-            itemBuilder: (_, {index, lock, deletable}) {
-              return Container(
-                color: randomColor(),
-                child: Center(
-                    child: Text(
-                  data[index],
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    shadows: [
-                      BoxShadow(color: Colors.black, blurRadius: 5),
+            dragEnd: (newIndex, oldIndex) {},
+            itemBuilder: (_, MyItem item) {
+              if (item == null) return null;
+              return Material(
+                elevation: 0,
+                borderOnForeground: false,
+                child: Container(
+                  color: item.color,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        item.index.toString(),
+                        style: TextStyle(
+                          fontSize: 22,
+                          color: Colors.white,
+                          shadows: [
+                            BoxShadow(color: Colors.black, blurRadius: 5),
+                          ],
+                        ),
+                      ),
+                      if (item.fixed()) Icon(Icons.lock_outline),
                     ],
                   ),
-                )),
+                ),
               );
             },
-            dragEnd: (newIndex, oldIndex) {},
           ),
         ],
       ), // This trailing comma makes auto-formatting nicer for build methods.
