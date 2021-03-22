@@ -39,7 +39,12 @@ class MyItem extends DraggableItem {
   bool fixed() => _fixed;
 }
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
+  @override
+  _MyHomePage createState() => _MyHomePage();
+}
+
+class _MyHomePage extends State<MyHomePage> {
   final data = <MyItem>[
     MyItem(1),
     MyItem(2),
@@ -51,6 +56,14 @@ class MyHomePage extends StatelessWidget {
     MyItem(8),
     MyItem(9),
   ];
+
+  final key = GlobalKey<DraggableContainerState<MyItem>>();
+
+  bool editting = false;
+  void editModeChange(bool val) {
+    editting = val;
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,8 +80,10 @@ class MyHomePage extends StatelessWidget {
             child: Text('hi'),
           ),
           DraggableContainer<MyItem>(
+            key: key,
             items: data,
             itemCount: 9,
+            onEditModeChange: editModeChange,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
               crossAxisSpacing: 10,
@@ -108,6 +123,17 @@ class MyHomePage extends StatelessWidget {
               );
             },
           ),
+          if (editting)
+            Container(
+              child: Center(
+                child: ElevatedButton(
+                  child: Text('退出编辑模式'),
+                  onPressed: () {
+                    key.currentState?.edit = false;
+                  },
+                ),
+              ),
+            ),
           Container(
             height: 30,
             color: Colors.red,

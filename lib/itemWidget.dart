@@ -7,7 +7,7 @@ class DraggableWidget<T extends DraggableItem> extends StatefulWidget {
   final GlobalKey<DraggableWidgetState<T>> key;
   final Rect rect;
   final Widget child;
-  final Widget? deleteButton;
+  final Widget deleteButton;
   final Duration duration;
 
   const DraggableWidget({
@@ -16,7 +16,7 @@ class DraggableWidget<T extends DraggableItem> extends StatefulWidget {
     required this.child,
     required this.item,
     required this.duration,
-    this.deleteButton,
+    required this.deleteButton,
   }) : super(key: key);
 
   @override
@@ -28,11 +28,28 @@ class DraggableWidgetState<T extends DraggableItem>
   late final T item = widget.item;
   late Rect _rect = widget.rect;
   bool _dragging = false;
+  bool _edit = false;
+  Curve _curve = Curves.linear;
+  late Duration _duration = widget.duration;
+
+  bool get edit => this._edit;
+
+  set edit(bool value) {
+    this._edit = value;
+    setState(() {});
+  }
 
   bool get dragging => _dragging;
 
   set dragging(bool value) {
     _dragging = value;
+    if (_dragging) {
+      _duration = Duration.zero;
+      _curve = Curves.linear;
+    } else {
+      _duration = widget.duration;
+      _curve = Curves.easeOut;
+    }
     setState(() {});
   }
 
@@ -47,17 +64,18 @@ class DraggableWidgetState<T extends DraggableItem>
   Widget build(BuildContext context) {
     return AnimatedPositioned.fromRect(
       rect: _rect,
-      duration: _dragging ? Duration.zero : widget.duration,
+      duration: _duration,
+      // curve: Curves.bounceInOut,
       child: MetaData(
         metaData: this,
         child: Stack(
           children: [
             Positioned.fill(child: widget.child),
-            if (item.deletable() && widget.deleteButton != null)
+            if (_edit && item.deletable())
               Positioned(
                 right: 0,
                 top: 0,
-                child: AbsorbPointer(child: widget.deleteButton!),
+                child: widget.deleteButton,
               ),
           ],
         ),
