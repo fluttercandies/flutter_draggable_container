@@ -63,6 +63,7 @@ class MyHomePage extends StatelessWidget {
           Container(
             height: 30,
             color: Colors.red,
+            alignment: Alignment.centerLeft,
             child: Text('hi'),
           ),
           DraggableContainer<MyItem>(
@@ -86,7 +87,7 @@ class MyHomePage extends StatelessWidget {
                 elevation: 0,
                 borderOnForeground: false,
                 child: Container(
-                  color: item.color,
+                  color: randomColor(),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -106,6 +107,12 @@ class MyHomePage extends StatelessWidget {
                 ),
               );
             },
+          ),
+          Container(
+            height: 30,
+            color: Colors.red,
+            alignment: Alignment.centerLeft,
+            child: Text('hi'),
           ),
         ],
       ), // This trailing comma makes auto-formatting nicer for build methods.

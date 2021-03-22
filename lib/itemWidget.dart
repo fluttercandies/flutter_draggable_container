@@ -26,24 +26,8 @@ class DraggableWidget<T extends DraggableItem> extends StatefulWidget {
 class DraggableWidgetState<T extends DraggableItem>
     extends State<DraggableWidget<T>> {
   late final T item = widget.item;
-  late Size _size = widget.rect.size;
-  late Offset _offset = widget.rect.topLeft;
+  late Rect _rect = widget.rect;
   bool _dragging = false;
-
-  Size get size => _size;
-
-  set size(Size value) {
-    _size = value;
-    setState(() {});
-  }
-
-  Offset get offset => _offset;
-
-  set offset(Offset value) {
-    print('更新item offset');
-    _offset = value;
-    setState(() {});
-  }
 
   bool get dragging => _dragging;
 
@@ -52,16 +36,20 @@ class DraggableWidgetState<T extends DraggableItem>
     setState(() {});
   }
 
+  Rect get rect => _rect;
+  set rect(Rect value) {
+    // print('item更新rect from:$_rect to:$value');
+    _rect = value;
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AnimatedPositioned(
-      left: _offset.dx,
-      top: _offset.dy,
-      width: _size.width,
-      height: _size.height,
+    return AnimatedPositioned.fromRect(
+      rect: _rect,
       duration: _dragging ? Duration.zero : widget.duration,
       child: MetaData(
-        metaData: widget.key,
+        metaData: this,
         child: Stack(
           children: [
             Positioned.fill(child: widget.child),
