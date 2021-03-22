@@ -1,12 +1,15 @@
-import 'package:draggable_container/slot2.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart' hide Widget;
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 import 'DraggableItemRecognizer.dart';
 import 'itemWidget.dart';
+import 'utils.dart';
+import 'rectCaches.dart';
+import 'slot2.dart';
 
 typedef Widget NullableItemBuilder<T extends DraggableItem>(
   BuildContext context,
@@ -60,7 +63,8 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
 }
 
 class DraggableContainerState<T extends DraggableItem>
-    extends State<DraggableContainer<T>> with SingleTickerProviderStateMixin {
+    extends State<DraggableContainer<T>>
+    with SingleTickerProviderStateMixin, RectCaches {
   final List<T?> items = [];
   final Map<GlobalKey<DraggableSlot2State<T>>, DraggableWidget<T>?>
       _relationship = {};
@@ -145,7 +149,7 @@ class DraggableContainerState<T extends DraggableItem>
   void _createOverlay() {
     _overlayEntry?.remove();
     if (!_tapOutSizeExitEdieMode) return;
-    final rect = _getRect(context);
+    final rect = getRect(context);
     _overlayEntry = new OverlayEntry(
       builder: (context) {
         return Stack(
@@ -182,6 +186,7 @@ class DraggableContainerState<T extends DraggableItem>
     if (_created) return;
     _created = true;
     _slots.clear();
+    _children.clear();
     _relationship.clear();
     final positions = getPositions();
     List.generate(widget.itemCount, (index) {
@@ -194,13 +199,13 @@ class DraggableContainerState<T extends DraggableItem>
         _itemSize.height,
       );
       final slot = createSlot(index, slotKey, item, rect);
+      _slots.add(slot);
       DraggableWidget<T>? child;
       if (item != null) {
         child = createItem(GlobalKey<DraggableWidgetState<T>>(), item, rect);
         _children.add(child);
       }
       _relationship[slotKey] = child;
-      _slots.add(slot);
     });
   }
 
@@ -219,6 +224,9 @@ class DraggableContainerState<T extends DraggableItem>
       final DraggableWidget? child = values[index];
       child?.key.currentState?.rect = rect;
     }
+    SchedulerBinding.instance?.addPostFrameCallback((timeStamp) {
+      _buildSlotRectCaches();
+    });
   }
 
   DraggableWidget<T> createItem(
@@ -275,22 +283,12 @@ class DraggableContainerState<T extends DraggableItem>
     }
   }
 
-  MapEntry<GlobalKey<DraggableSlot2State<T>>, DraggableWidget<T>?>?
-      findSlotWithPosition(Offset globalPosition) {
-    for (var entry in _relationship.entries) {
-      if (_getRect(entry.key.currentContext!).contains(globalPosition))
-        return entry;
-    }
-  }
-
-  Rect _getRect(BuildContext context) {
-    final box = context.findRenderObject() as RenderBox;
-    final size = box.size;
-    final offset = box.localToGlobal(Offset.zero);
-    return Rect.fromLTWH(offset.dx, offset.dy, size.width, size.height);
+  void _buildSlotRectCaches() {
+    buildSlotRectCaches(_relationship.keys.map((e) => e.currentContext!));
   }
 
   onPanStart(DragStartDetails _) {
+    _buildSlotRectCaches();
     pickUp = findItemWithPosition(_.globalPosition);
     print('panStart $pickUp');
     if (pickUp != null) {
@@ -305,8 +303,9 @@ class DraggableContainerState<T extends DraggableItem>
 
   onPanUpdate(DragUpdateDetails _) {
     if (pickUp != null) {
-      final entry = findSlotWithPosition(_.globalPosition);
-      if (entry != null) {
+      final entryIndex = findSlotByOffset(_.globalPosition);
+      if (entryIndex != -1) {
+        final entry = _relationship.entries.elementAt(entryIndex);
         final slot = entry.key;
         final value = entry.value;
         if (value == null || value.item.fixed() == false) {
