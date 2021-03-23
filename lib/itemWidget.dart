@@ -3,7 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'draggable_container.dart';
 
 class DraggableWidget<T extends DraggableItem> extends StatefulWidget {
-  final T item;
+  final T? item;
   final GlobalKey<DraggableWidgetState<T>> key;
   final Rect rect;
   final Widget child;
@@ -14,7 +14,7 @@ class DraggableWidget<T extends DraggableItem> extends StatefulWidget {
     required this.key,
     required this.rect,
     required this.child,
-    required this.item,
+    this.item,
     required this.duration,
     required this.deleteButton,
   }) : super(key: key);
@@ -25,11 +25,10 @@ class DraggableWidget<T extends DraggableItem> extends StatefulWidget {
 
 class DraggableWidgetState<T extends DraggableItem>
     extends State<DraggableWidget<T>> {
-  late final T item = widget.item;
+  late final T? item = widget.item;
   late Rect _rect = widget.rect;
   bool _dragging = false;
   bool _edit = false;
-  Curve _curve = Curves.linear;
   late Duration _duration = widget.duration;
 
   bool get edit => this._edit;
@@ -45,10 +44,8 @@ class DraggableWidgetState<T extends DraggableItem>
     _dragging = value;
     if (_dragging) {
       _duration = Duration.zero;
-      _curve = Curves.linear;
     } else {
       _duration = widget.duration;
-      _curve = Curves.easeOut;
     }
     setState(() {});
   }
@@ -71,7 +68,7 @@ class DraggableWidgetState<T extends DraggableItem>
         child: Stack(
           children: [
             Positioned.fill(child: widget.child),
-            if (_edit && item.deletable())
+            if (_edit && item?.deletable() == true)
               Positioned(
                 right: 0,
                 top: 0,

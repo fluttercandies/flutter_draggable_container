@@ -3,13 +3,14 @@ import 'package:flutter/widgets.dart';
 import 'draggable_container.dart';
 
 class DraggableSlot2<T extends DraggableItem> extends StatefulWidget {
+  final GlobalKey<DraggableSlot2State<T>> key;
   final T? item;
   final Widget slot;
   final Rect rect;
   final Duration duration;
 
   const DraggableSlot2({
-    Key? key,
+    required this.key,
     required this.slot,
     required this.rect,
     required this.duration,
@@ -23,17 +24,19 @@ class DraggableSlot2<T extends DraggableItem> extends StatefulWidget {
 class DraggableSlot2State<T extends DraggableItem>
     extends State<DraggableSlot2<T>> {
   late T? item = widget.item;
-  late Rect rect = widget.rect;
+  late Rect _rect = widget.rect;
 
-  updateRect(Rect rect) {
-    this.rect = rect;
+  Rect get rect => this._rect;
+
+  set rect(Rect value) {
+    _rect = rect;
     setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedPositioned.fromRect(
-      rect: rect,
+      rect: _rect,
       duration: widget.duration,
       child: widget.slot,
     );

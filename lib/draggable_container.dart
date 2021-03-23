@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart' hide Widget;
@@ -8,12 +10,13 @@ import 'package:flutter/widgets.dart';
 import 'DraggableItemRecognizer.dart';
 import 'itemWidget.dart';
 import 'utils.dart';
-import 'rectCaches.dart';
+import 'aboutRect.dart';
 import 'slot2.dart';
 
-typedef Widget NullableItemBuilder<T extends DraggableItem>(
+typedef Widget? NullableItemBuilder<T extends DraggableItem>(
   BuildContext context,
   T? item,
+  int index,
 );
 
 abstract class DraggableItem {
@@ -28,8 +31,7 @@ abstract class DraggableItem {
 }
 
 class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
-  final int itemCount;
-  final List<T?>? items;
+  final List<T?> items;
   final NullableItemBuilder<T> itemBuilder;
   final NullableItemBuilder<T>? deleteButtonBuilder;
   final NullableItemBuilder<T>? slotBuilder;
@@ -42,10 +44,9 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
 
   const DraggableContainer({
     Key? key,
-    required this.itemCount,
+    required this.items,
     required this.itemBuilder,
     required this.gridDelegate,
-    this.items,
     this.deleteButtonBuilder,
     this.slotBuilder,
     this.padding,
@@ -55,7 +56,6 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
     Duration? animationDuration,
   })  : animationDuration =
             animationDuration ?? const Duration(milliseconds: 200),
-        assert(items != null && items.length <= itemCount),
         super(key: key);
 
   @override
@@ -64,14 +64,14 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
 
 class DraggableContainerState<T extends DraggableItem>
     extends State<DraggableContainer<T>>
-    with SingleTickerProviderStateMixin, RectCaches {
-  final List<T?> items = [];
-  final Map<GlobalKey<DraggableSlot2State<T>>, DraggableWidget<T>?>
-      _relationship = {};
+    with SingleTickerProviderStateMixin, AboutRect {
+  late final List<T?> items = widget.items.toList();
+  final Map<GlobalKey<DraggableSlot2State<T>>,
+      GlobalKey<DraggableWidgetState<T>>?> _relationship = {};
   final List<DraggableSlot2<T>> _slots = [];
   final List<DraggableWidget<T>> _children = [];
   double layoutWidth = 0;
-  final Map<T, Widget> itemCaches = {};
+  double _maxHeight = 0;
 
   late final GestureRecognizerFactory _longPressRecognizer =
       GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
@@ -101,21 +101,16 @@ class DraggableContainerState<T extends DraggableItem>
   late final Map<Type, GestureRecognizerFactory> _gestures = {
     LongPressGestureRecognizer: _longPressRecognizer,
   };
-  bool _edit = false;
-
-  bool get edit => _edit;
 
   DraggableWidgetState<T>? pickUp;
 
-  GlobalKey<DraggableSlot2State<T>>? _fromSlot, _toSlot;
+  GlobalKey<DraggableSlot2State<T>>? _fromSlot;
 
   Widget? draggingWidget;
   T? draggingItem;
   GlobalKey<DraggableWidgetState>? draggingKey;
-  late Size _itemSize;
-  Size get itemSize => _itemSize;
-  late double _mainSpacing, _crossSpacing;
-  double _maxHeight = 0;
+
+  Size get itemSize => super.itemSize;
   late bool _tapOutSizeExitEdieMode = widget.tapOutSizeExitEdieMode ?? true;
 
   bool get tapOutSizeExitEdieMode => this._tapOutSizeExitEdieMode;
@@ -123,12 +118,19 @@ class DraggableContainerState<T extends DraggableItem>
   set tapOutSizeExitEdieMode(bool value) =>
       this._tapOutSizeExitEdieMode = value;
 
-  set edit(bool value) {
-    _edit = value;
+  bool _editMode = false;
+
+  bool get editMode => _editMode;
+
+  List<GlobalKey<DraggableSlot2State<T>>> get slots =>
+      _relationship.keys.toList();
+
+  set editMode(bool value) {
+    _editMode = value;
     if (value) {
       // 进入编辑模式
       _createOverlay();
-      // _gestures.remove(LongPressGestureRecognizer);
+      _gestures.remove(LongPressGestureRecognizer);
       _gestures[DraggableItemRecognizer] = _draggableItemRecognizer;
     } else {
       // 退出编辑模式
@@ -139,13 +141,14 @@ class DraggableContainerState<T extends DraggableItem>
     }
     _relationship.forEach((slot, item) {
       if (item == null) return;
-      item.key.currentState?.edit = _edit;
+      item.currentState?.edit = _editMode;
     });
     setState(() {});
-    widget.onEditModeChange?.call(_edit);
+    widget.onEditModeChange?.call(_editMode);
   }
 
   OverlayEntry? _overlayEntry;
+
   void _createOverlay() {
     _overlayEntry?.remove();
     if (!_tapOutSizeExitEdieMode) return;
@@ -158,7 +161,7 @@ class DraggableContainerState<T extends DraggableItem>
               behavior: HitTestBehavior.translucent,
               onPointerUp: (e) {
                 if (rect.contains(e.position) == false && pickUp == null) {
-                  edit = false;
+                  editMode = false;
                 }
               },
             ),
@@ -188,50 +191,39 @@ class DraggableContainerState<T extends DraggableItem>
     _slots.clear();
     _children.clear();
     _relationship.clear();
-    final positions = getPositions();
-    List.generate(widget.itemCount, (index) {
-      final item = widget.items?[index];
-      final slotKey = GlobalKey<DraggableSlot2State<T>>();
-      final Rect rect = Rect.fromLTWH(
-        positions[index].dx,
-        positions[index].dy,
-        _itemSize.width,
-        _itemSize.height,
-      );
-      final slot = createSlot(index, slotKey, item, rect);
-      _slots.add(slot);
-      DraggableWidget<T>? child;
-      if (item != null) {
-        child = createItem(GlobalKey<DraggableWidgetState<T>>(), item, rect);
-        _children.add(child);
-      }
-      _relationship[slotKey] = child;
+    List.generate(items.length, (index) {
+      final item = items[index];
+      addSlot(item, false);
     });
   }
 
   void _updateSlots() {
-    final keys = _relationship.keys.toList();
-    final values = _relationship.values.toList();
-    final positions = getPositions();
-    for (var index = 0; index < keys.length; index++) {
-      final rect = Rect.fromLTWH(
-        positions[index].dx,
-        positions[index].dy,
-        _itemSize.width,
-        _itemSize.height,
-      );
-      keys[index].currentState?.updateRect(rect);
-      final DraggableWidget? child = values[index];
-      child?.key.currentState?.rect = rect;
+    final entries = _relationship.entries;
+    late Rect rect;
+    for (var index = 0; index < entries.length; index++) {
+      final entry = entries.elementAt(index);
+      final key = entry.key;
+      final value = entry.value;
+      final _rect = calcSlotRect(index: index, layoutWidth: layoutWidth);
+      print('更新槽 $index ${key.currentState}');
+      key.currentState?.rect = _rect;
+      value?.currentState?.rect = _rect;
+      rect = _rect;
     }
+    _maxHeight = rect.bottom;
     SchedulerBinding.instance?.addPostFrameCallback((timeStamp) {
       _buildSlotRectCaches();
     });
   }
 
-  DraggableWidget<T> createItem(
-      GlobalKey<DraggableWidgetState<T>> key, T item, Rect rect) {
-    Widget button = widget.deleteButtonBuilder?.call(context, item) ??
+  DraggableWidget<T>? createItem({
+    required int index,
+    T? item,
+    required Rect rect,
+  }) {
+    Widget? child = widget.itemBuilder(context, item, index);
+    if (child == null) return null;
+    Widget button = widget.deleteButtonBuilder?.call(context, item, index) ??
         Container(
           width: 14,
           height: 14,
@@ -246,11 +238,11 @@ class DraggableContainerState<T extends DraggableItem>
           ),
         );
     return DraggableWidget(
-      key: key,
+      key: GlobalKey<DraggableWidgetState<T>>(),
       rect: rect,
       item: item,
       duration: widget.animationDuration,
-      child: widget.itemBuilder(context, item),
+      child: child,
       deleteButton: GestureDetector(
         child: DeleteItemButton(child: button),
         onTap: () {
@@ -262,18 +254,17 @@ class DraggableContainerState<T extends DraggableItem>
   }
 
   bool isHitItem(Offset globalPosition) {
-    return findItemWithPosition(globalPosition)?.item.fixed() == false;
+    return findItemByEventPosition(globalPosition)?.item?.fixed() == false;
   }
 
-  DraggableWidgetState<T>? findItemWithPosition(Offset globalPosition) {
+  DraggableWidgetState<T>? findItemByEventPosition(Offset globalPosition) {
     final HitTestResult result = HitTestResult();
     WidgetsBinding.instance!.hitTest(result, globalPosition);
-    print('path length ${result.path.length}');
+    // print('path length ${result.path.length}');
     for (HitTestEntry entry in result.path) {
       final target = entry.target;
       if (target is RenderMetaData) {
         final data = target.metaData;
-        print('hit $pickUp $data');
         if (data is DraggableWidgetState<T> && data != pickUp) {
           return data;
         } else if (data is DeleteItemButton) {
@@ -288,13 +279,12 @@ class DraggableContainerState<T extends DraggableItem>
   }
 
   onPanStart(DragStartDetails _) {
-    _buildSlotRectCaches();
-    pickUp = findItemWithPosition(_.globalPosition);
-    print('panStart $pickUp');
+    pickUp = findItemByEventPosition(_.globalPosition);
     if (pickUp != null) {
       _children.remove(pickUp!.widget);
       pickUp!.dragging = true;
-      _fromSlot = findSlotFromItemWidget(pickUp!.widget);
+      _fromSlot = findSlotFromItemState(pickUp!);
+      print('panStart $_fromSlot');
       setState(() {});
     }
   }
@@ -303,16 +293,7 @@ class DraggableContainerState<T extends DraggableItem>
 
   onPanUpdate(DragUpdateDetails _) {
     if (pickUp != null) {
-      final entryIndex = findSlotByOffset(_.globalPosition);
-      if (entryIndex != -1) {
-        final entry = _relationship.entries.elementAt(entryIndex);
-        final slot = entry.key;
-        final value = entry.value;
-        if (value == null || value.item.fixed() == false) {
-          _toSlot = slot;
-        }
-      }
-      // print('移动抓起的item ${_.delta}');
+      // print('panUpdate ${_.delta}');
       final rect = pickUp!.rect;
       pickUp!.rect = Rect.fromLTWH(
         rect.left + _.delta.dx,
@@ -320,18 +301,30 @@ class DraggableContainerState<T extends DraggableItem>
         rect.width,
         rect.height,
       );
+
+      final entryIndex = findSlotByOffset(_.globalPosition);
+      // print('update entryIndex $entryIndex');
+      if (entryIndex != -1) {
+        final entry = _relationship.entries.elementAt(entryIndex);
+        final slot = entry.key;
+        final value = entry.value;
+        if ((value == null || value.currentState?.item?.fixed() == false) &&
+            slot != _fromSlot) {
+          _reorder(slot);
+        }
+      }
     }
   }
 
   onPanEnd(_) {
     if (pickUp != null) {
+      print('panEnd');
       _children.add(pickUp!.widget);
       pickUp!.dragging = false;
-      pickUp!.rect =
-          _toSlot?.currentState!.rect ?? _fromSlot!.currentState!.rect;
+      pickUp!.rect = _fromSlot!.currentState!.rect;
+      _relationship[_fromSlot!] = pickUp!.widget.key;
       pickUp = null;
-      _toSlot = null;
-      setState(() {});
+      _fromSlot = null;
     }
   }
 
@@ -339,7 +332,7 @@ class DraggableContainerState<T extends DraggableItem>
 
   onLongPressStart(LongPressStartDetails _) {
     // print('onLongPressStart');
-    edit = true;
+    editMode = true;
     longPressPosition = _.localPosition;
     onPanStart(DragStartDetails(globalPosition: _.globalPosition));
   }
@@ -358,6 +351,60 @@ class DraggableContainerState<T extends DraggableItem>
     onPanEnd(null);
   }
 
+  void _reorder(GlobalKey<DraggableSlot2State<T>> toSlot) {
+    if (_fromSlot == null) return;
+    final slots = _relationship.keys.toList();
+    final fromIndex = slots.indexOf(_fromSlot!),
+        toIndex = slots.indexOf(toSlot);
+    final start = math.min(fromIndex, toIndex),
+        end = math.max(fromIndex, toIndex);
+    print('reorder $start to $end');
+    if (end - start == 1) {
+      // 前后交换
+      print('前后交换');
+      _relationship[toSlot]?.currentState?.rect = _fromSlot!.currentState!.rect;
+      _relationship[_fromSlot!] = _relationship[toSlot];
+      _fromSlot = toSlot;
+    }
+    // else if (end - start > 1) {
+    // 多个交换
+    //   for (var i = start; i < end; i++) {
+    //     print('reorder $i');
+    //     final current = _relationship.entries.elementAt(i);
+    //     final slot = current.key;
+    //     final item = current.value;
+    //     if (item == null) {
+    //       final next = findNextDraggableItem(start: i, end: end);
+    //       if (next == null) {
+    //         break;
+    //       }
+    //       final nextSlot = next.key;
+    //       final nextItem = next.value!;
+    //       nextItem.currentState?.rect = Rect.fromLTWH(
+    //         slot.currentState!.rect.left,
+    //         slot.currentState!.rect.top,
+    //         nextItem.currentState!.rect.width,
+    //         nextItem.currentState!.rect.height,
+    //       );
+    //       _relationship[slot] = nextItem;
+    //       _relationship[nextSlot] = null;
+    //     }
+    //   }
+    // }
+  }
+
+  MapEntry<GlobalKey<DraggableSlot2State<T>>,
+      GlobalKey<DraggableWidgetState<T>>?>? findNextDraggableItem({
+    required int start,
+    required int end,
+  }) {
+    final entries = _relationship.entries.toList();
+    for (var i = start; i < end; i++) {
+      final entry = entries[i];
+      if (entry.value?.currentState?.item?.fixed() == false) return entry;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     Widget child = RawGestureDetector(
@@ -370,13 +417,15 @@ class DraggableContainerState<T extends DraggableItem>
           if (_layoutWidth != layoutWidth) {
             layoutWidth = _layoutWidth;
             // print('layoutBuild $layoutWidth');
-            _itemSize = getItemSize();
+            calcItemSize(widget.gridDelegate, layoutWidth);
             _createSlots();
             _updateSlots();
           }
+          // 容器高度
           final height = constraints.maxHeight == double.infinity
               ? _maxHeight
               : constraints.maxHeight;
+          // print('容器高度 $height');
           return Container(
             height: height,
             child: Stack(
@@ -396,13 +445,17 @@ class DraggableContainerState<T extends DraggableItem>
     return child;
   }
 
-  DraggableSlot2<T> createSlot(int index, Key key, T? item, Rect rect) {
+  DraggableSlot2<T> createSlot({
+    required int index,
+    required T? item,
+    required Rect rect,
+  }) {
     return DraggableSlot2<T>(
-      key: key,
+      key: GlobalKey<DraggableSlot2State<T>>(),
       item: item,
       rect: rect,
       duration: widget.animationDuration,
-      slot: widget.slotBuilder?.call(context, item) ??
+      slot: widget.slotBuilder?.call(context, item, index) ??
           Container(
             decoration: BoxDecoration(
               // borderRadius: BorderRadius.all(Radius.circular(10)),
@@ -411,55 +464,48 @@ class DraggableContainerState<T extends DraggableItem>
                 color: Colors.blue,
               ),
             ),
-            child: Text(index.toString()),
+            child: Center(child: Text(_relationship.keys.length.toString())),
           ),
     );
   }
 
-  Size getItemSize() {
-    var delegate = widget.gridDelegate;
-    double width = 0, height = 0;
-    if (delegate is SliverGridDelegateWithFixedCrossAxisCount) {
-      _crossSpacing = delegate.crossAxisSpacing;
-      _mainSpacing = delegate.mainAxisSpacing;
-      width = (layoutWidth - ((delegate.crossAxisCount - 1) * _mainSpacing)) /
-          delegate.crossAxisCount;
-      height = delegate.mainAxisExtent ?? width * delegate.childAspectRatio;
-    } else if (delegate is SliverGridDelegateWithMaxCrossAxisExtent) {
-      _crossSpacing = delegate.crossAxisSpacing;
-      _mainSpacing = delegate.mainAxisSpacing;
-      width = delegate.maxCrossAxisExtent;
-      height = delegate.mainAxisExtent ?? width * delegate.childAspectRatio;
-    }
-    return Size(width, height);
+  GlobalKey<DraggableSlot2State<T>>? findSlotFromItemState(
+      DraggableWidgetState<T>? state) {
+    if (state == null) return null;
+    final index = _relationship.values.toList().indexOf(state.widget.key);
+    if (index > -1) return _relationship.keys.elementAt(index);
   }
 
-  List<Offset> getPositions() {
-    final double width = _itemSize.width, height = _itemSize.height;
-    double lineX = 0, lineY = 0;
-    final list = List.generate(widget.itemCount, (index) {
-      if (index > 0) {
-        lineX += width + _crossSpacing;
-        if ((lineX + width > layoutWidth)) {
-          lineX = 0;
-          lineY += height + _mainSpacing;
-        }
-      }
-      // print('$layoutWidth $index:($lineX,$lineY)');
-      return Offset(lineX, lineY);
-    });
-    _maxHeight = lineY + height;
-    return list;
+  addSlot(T? item, [bool update = true]) {
+    this.insertSlot(_relationship.length, item, update);
   }
 
-  GlobalKey<DraggableSlot2State<T>>? findSlotFromItemWidget(
-      DraggableWidget<T>? widget) {
-    if (widget == null) return null;
-    if (_relationship.containsValue(widget)) {
-      final index = _relationship.values.toList().indexOf(widget);
-      return _relationship.keys.elementAt(index);
+  insertSlot(int index, T? item, [bool update = true]) {
+    items.insert(index, item);
+    final Rect rect = calcSlotRect(index: index, layoutWidth: layoutWidth);
+    final slot = createSlot(index: index, item: item, rect: rect);
+    final child = createItem(index: index, item: item, rect: rect);
+    if (child != null) {
+      _children.add(child);
     }
-    return null;
+    _slots.insert(index, slot);
+    final keys = _relationship.keys.toList();
+    final values = _relationship.values.toList();
+    keys.insert(index, slot.key);
+    values.insert(index, child?.key);
+    final Iterable<
+        MapEntry<GlobalKey<DraggableSlot2State<T>>,
+            GlobalKey<DraggableWidgetState<T>>?>> entries = Iterable.generate(
+      keys.length,
+      (index) => MapEntry(keys[index], values[index]),
+    );
+    _relationship
+      ..clear()
+      ..addEntries(entries);
+    if (update) {
+      _updateSlots();
+      setState(() {});
+    }
   }
 }
 
@@ -470,6 +516,7 @@ class DeleteItemButton extends StatelessWidget {
     Key? key,
     required this.child,
   }) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MetaData(

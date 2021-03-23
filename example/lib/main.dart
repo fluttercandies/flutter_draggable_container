@@ -28,8 +28,11 @@ class MyItem extends DraggableItem {
   bool _fixed = false;
 
   MyItem(this.index)
-      : _fixed = index % 2 == 0,
-        _deletable = index % 2 == 1,
+      :
+        // _fixed = index % 2 == 0,
+        _fixed = index == 7,
+        // _deletable = index % 2 == 1,
+        _deletable = true,
         color = randomColor();
 
   @override
@@ -39,25 +42,25 @@ class MyItem extends DraggableItem {
   bool fixed() => _fixed;
 }
 
+class AddItem extends DraggableItem {
+  @override
+  bool deletable() => false;
+
+  @override
+  bool fixed() => true;
+}
+
 class MyHomePage extends StatefulWidget {
   @override
   _MyHomePage createState() => _MyHomePage();
 }
 
 class _MyHomePage extends State<MyHomePage> {
-  final data = <MyItem>[
-    MyItem(1),
-    MyItem(2),
-    MyItem(3),
-    MyItem(4),
-    null,
-    MyItem(6),
-    MyItem(7),
-    MyItem(8),
-    MyItem(9),
+  final data = <DraggableItem>[
+    AddItem(),
   ];
 
-  final key = GlobalKey<DraggableContainerState<MyItem>>();
+  final key = GlobalKey<DraggableContainerState<DraggableItem>>();
 
   bool editting = false;
   void editModeChange(bool val) {
@@ -79,10 +82,9 @@ class _MyHomePage extends State<MyHomePage> {
             alignment: Alignment.centerLeft,
             child: Text('hi'),
           ),
-          DraggableContainer<MyItem>(
+          DraggableContainer<DraggableItem>(
             key: key,
             items: data,
-            itemCount: 9,
             onEditModeChange: editModeChange,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
@@ -96,31 +98,57 @@ class _MyHomePage extends State<MyHomePage> {
             // ),
             padding: EdgeInsets.all(10),
             dragEnd: (newIndex, oldIndex) {},
-            itemBuilder: (_, MyItem item) {
-              if (item == null) return null;
-              return Material(
-                elevation: 0,
-                borderOnForeground: false,
-                child: Container(
-                  color: randomColor(),
+            itemBuilder: (_, DraggableItem item, int index) {
+              if (item is AddItem) {
+                return ElevatedButton(
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        item.index.toString(),
-                        style: TextStyle(
-                          fontSize: 22,
-                          color: Colors.white,
-                          shadows: [
-                            BoxShadow(color: Colors.black, blurRadius: 5),
-                          ],
-                        ),
+                        'Add',
+                        style: TextStyle(color: Colors.white),
                       ),
-                      if (item.fixed()) Icon(Icons.lock_outline),
+                      Icon(
+                        Icons.add,
+                        color: Colors.white,
+                      ),
                     ],
                   ),
-                ),
-              );
+                  onPressed: () {
+                    key.currentState.insertSlot(
+                        0,
+                        MyItem(
+                          key.currentState.slots.length,
+                        ));
+                    print('slot length: ${key.currentState.slots.length}');
+                  },
+                );
+              } else if (item is MyItem) {
+                return Material(
+                  elevation: 0,
+                  borderOnForeground: false,
+                  child: Container(
+                    color: randomColor(),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          item.index.toString(),
+                          style: TextStyle(
+                            fontSize: 22,
+                            color: Colors.white,
+                            shadows: [
+                              BoxShadow(color: Colors.black, blurRadius: 5),
+                            ],
+                          ),
+                        ),
+                        if (item.fixed()) Icon(Icons.lock_outline),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              return null;
             },
           ),
           if (editting)
@@ -129,7 +157,7 @@ class _MyHomePage extends State<MyHomePage> {
                 child: ElevatedButton(
                   child: Text('退出编辑模式'),
                   onPressed: () {
-                    key.currentState?.edit = false;
+                    key.currentState?.editMode = false;
                   },
                 ),
               ),
