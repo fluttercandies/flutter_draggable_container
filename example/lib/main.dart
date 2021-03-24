@@ -40,6 +40,11 @@ class MyItem extends DraggableItem {
 
   @override
   bool fixed() => _fixed;
+
+  @override
+  String toString() {
+    return '<MyItem> ${this.hashCode}';
+  }
 }
 
 class AddItem extends DraggableItem {
@@ -48,6 +53,11 @@ class AddItem extends DraggableItem {
 
   @override
   bool fixed() => true;
+
+  @override
+  String toString() {
+    return '<AddItem> ${this.hashCode}';
+  }
 }
 
 class MyHomePage extends StatefulWidget {
@@ -99,6 +109,7 @@ class _MyHomePage extends State<MyHomePage> {
             padding: EdgeInsets.all(10),
             dragEnd: (newIndex, oldIndex) {},
             itemBuilder: (_, DraggableItem item, int index) {
+              print('itemBuilder $index $item');
               if (item is AddItem) {
                 return ElevatedButton(
                   child: Column(
@@ -115,12 +126,15 @@ class _MyHomePage extends State<MyHomePage> {
                     ],
                   ),
                   onPressed: () {
-                    key.currentState.insertSlot(
-                        0,
-                        MyItem(
-                          key.currentState.slots.length,
-                        ));
-                    print('slot length: ${key.currentState.slots.length}');
+                    if (key.currentState.slots.length < 9) {
+                      key.currentState.insertSlot(
+                          0,
+                          MyItem(
+                            key.currentState.slots.length,
+                          ));
+                    } else {
+                      key.currentState.replaceSlot(8, MyItem(99));
+                    }
                   },
                 );
               } else if (item is MyItem) {

@@ -12,6 +12,7 @@ import 'itemWidget.dart';
 import 'utils.dart';
 import 'aboutRect.dart';
 import 'slot2.dart';
+import 'deleteButton.dart';
 
 typedef Widget? NullableItemBuilder<T extends DraggableItem>(
   BuildContext context,
@@ -65,7 +66,7 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
 class DraggableContainerState<T extends DraggableItem>
     extends State<DraggableContainer<T>>
     with SingleTickerProviderStateMixin, AboutRect {
-  late final List<T?> items = widget.items.toList();
+  final List<T?> items = [];
   final Map<GlobalKey<DraggableSlot2State<T>>,
       GlobalKey<DraggableWidgetState<T>>?> _relationship = {};
   final List<DraggableSlot2<T>> _slots = [];
@@ -111,12 +112,12 @@ class DraggableContainerState<T extends DraggableItem>
   GlobalKey<DraggableWidgetState>? draggingKey;
 
   Size get itemSize => super.itemSize;
-  late bool _tapOutSizeExitEdieMode = widget.tapOutSizeExitEdieMode ?? true;
+  late bool _tapOutSizeExitEditMode = widget.tapOutSizeExitEdieMode ?? true;
 
-  bool get tapOutSizeExitEdieMode => this._tapOutSizeExitEdieMode;
+  bool get tapOutSideExitEditMode => this._tapOutSizeExitEditMode;
 
-  set tapOutSizeExitEdieMode(bool value) =>
-      this._tapOutSizeExitEdieMode = value;
+  set tapOutSideExitEditMode(bool value) =>
+      this._tapOutSizeExitEditMode = value;
 
   bool _editMode = false;
 
@@ -130,13 +131,12 @@ class DraggableContainerState<T extends DraggableItem>
     if (value) {
       // 进入编辑模式
       _createOverlay();
-      _gestures.remove(LongPressGestureRecognizer);
+      // _gestures.remove(LongPressGestureRecognizer);
       _gestures[DraggableItemRecognizer] = _draggableItemRecognizer;
     } else {
       // 退出编辑模式
       _removeOverlay();
       _gestures.remove(DraggableItemRecognizer);
-      _overlayEntry?.remove();
       // _gestures[LongPressGestureRecognizer] = _longPressRecognizer;
     }
     _relationship.forEach((slot, item) {
@@ -151,7 +151,7 @@ class DraggableContainerState<T extends DraggableItem>
 
   void _createOverlay() {
     _overlayEntry?.remove();
-    if (!_tapOutSizeExitEdieMode) return;
+    if (!_tapOutSizeExitEditMode) return;
     final rect = getRect(context);
     _overlayEntry = new OverlayEntry(
       builder: (context) {
@@ -171,6 +171,7 @@ class DraggableContainerState<T extends DraggableItem>
             //     color: Colors.yellow.withOpacity(0.3),
             //   ),
             // ),
+            if (pickUp != null) pickUp!.widget,
           ],
         );
       },
@@ -191,9 +192,8 @@ class DraggableContainerState<T extends DraggableItem>
     _slots.clear();
     _children.clear();
     _relationship.clear();
-    List.generate(items.length, (index) {
-      final item = items[index];
-      addSlot(item, false);
+    List.generate(widget.items.length, (index) {
+      addSlot(widget.items[index], update: false);
     });
   }
 
@@ -204,11 +204,10 @@ class DraggableContainerState<T extends DraggableItem>
       final entry = entries.elementAt(index);
       final key = entry.key;
       final value = entry.value;
-      final _rect = calcSlotRect(index: index, layoutWidth: layoutWidth);
-      print('更新槽 $index ${key.currentState}');
-      key.currentState?.rect = _rect;
-      value?.currentState?.rect = _rect;
-      rect = _rect;
+      rect = calcSlotRect(index: index, layoutWidth: layoutWidth);
+      // print('更新槽 $index ${key.currentState}');
+      key.currentState?.rect = rect;
+      value?.currentState?.rect = rect;
     }
     _maxHeight = rect.bottom;
     SchedulerBinding.instance?.addPostFrameCallback((timeStamp) {
@@ -279,6 +278,7 @@ class DraggableContainerState<T extends DraggableItem>
   }
 
   onPanStart(DragStartDetails _) {
+    _buildSlotRectCaches();
     pickUp = findItemByEventPosition(_.globalPosition);
     if (pickUp != null) {
       _children.remove(pickUp!.widget);
@@ -303,10 +303,10 @@ class DraggableContainerState<T extends DraggableItem>
       );
 
       final entryIndex = findSlotByOffset(_.globalPosition);
-      // print('update entryIndex $entryIndex');
       if (entryIndex != -1) {
         final entry = _relationship.entries.elementAt(entryIndex);
         final slot = entry.key;
+        print('panUpdate $_fromSlot $slot');
         final value = entry.value;
         if ((value == null || value.currentState?.item?.fixed() == false) &&
             slot != _fromSlot) {
@@ -365,32 +365,31 @@ class DraggableContainerState<T extends DraggableItem>
       _relationship[toSlot]?.currentState?.rect = _fromSlot!.currentState!.rect;
       _relationship[_fromSlot!] = _relationship[toSlot];
       _fromSlot = toSlot;
+    } else if (end - start > 1) {
+      // 多个交换
+      for (var i = start; i < end; i++) {
+        print('reorder $i');
+        final current = _relationship.entries.elementAt(i);
+        final slot = current.key;
+        final item = current.value;
+        if (item == null) {
+          final next = findNextDraggableItem(start: i, end: end);
+          if (next == null) {
+            break;
+          }
+          final nextSlot = next.key;
+          final nextItem = next.value!;
+          nextItem.currentState?.rect = Rect.fromLTWH(
+            slot.currentState!.rect.left,
+            slot.currentState!.rect.top,
+            nextItem.currentState!.rect.width,
+            nextItem.currentState!.rect.height,
+          );
+          _relationship[slot] = nextItem;
+          _relationship[nextSlot] = null;
+        }
+      }
     }
-    // else if (end - start > 1) {
-    // 多个交换
-    //   for (var i = start; i < end; i++) {
-    //     print('reorder $i');
-    //     final current = _relationship.entries.elementAt(i);
-    //     final slot = current.key;
-    //     final item = current.value;
-    //     if (item == null) {
-    //       final next = findNextDraggableItem(start: i, end: end);
-    //       if (next == null) {
-    //         break;
-    //       }
-    //       final nextSlot = next.key;
-    //       final nextItem = next.value!;
-    //       nextItem.currentState?.rect = Rect.fromLTWH(
-    //         slot.currentState!.rect.left,
-    //         slot.currentState!.rect.top,
-    //         nextItem.currentState!.rect.width,
-    //         nextItem.currentState!.rect.height,
-    //       );
-    //       _relationship[slot] = nextItem;
-    //       _relationship[nextSlot] = null;
-    //     }
-    //   }
-    // }
   }
 
   MapEntry<GlobalKey<DraggableSlot2State<T>>,
@@ -416,7 +415,7 @@ class DraggableContainerState<T extends DraggableItem>
               : constraints.maxWidth.roundToDouble();
           if (_layoutWidth != layoutWidth) {
             layoutWidth = _layoutWidth;
-            // print('layoutBuild $layoutWidth');
+            print('layoutBuild $layoutWidth');
             calcItemSize(widget.gridDelegate, layoutWidth);
             _createSlots();
             _updateSlots();
@@ -433,7 +432,6 @@ class DraggableContainerState<T extends DraggableItem>
               children: [
                 ..._slots,
                 ..._children,
-                if (pickUp != null) pickUp!.widget,
               ],
             ),
           );
@@ -476,29 +474,43 @@ class DraggableContainerState<T extends DraggableItem>
     if (index > -1) return _relationship.keys.elementAt(index);
   }
 
-  addSlot(T? item, [bool update = true]) {
-    this.insertSlot(_relationship.length, item, update);
-  }
-
-  insertSlot(int index, T? item, [bool update = true]) {
-    items.insert(index, item);
+  addSlot(T? item, {bool update = true}) {
+    final index = items.length;
+    items.add(item);
     final Rect rect = calcSlotRect(index: index, layoutWidth: layoutWidth);
     final slot = createSlot(index: index, item: item, rect: rect);
     final child = createItem(index: index, item: item, rect: rect);
     if (child != null) {
       _children.add(child);
     }
-    _slots.insert(index, slot);
+    _slots.add(slot);
+    _relationship[slot.key] = child?.key;
+
+    if (update) {
+      _updateSlots();
+      setState(() {});
+    }
+  }
+
+  insertSlot(int index, T? item, {bool update = true}) {
+    print('insertSlot $index');
+    items.insert(index, item);
+    final entry = _create(index, item);
+    if (entry.value != null) {
+      _children.add(entry.value!);
+    }
+    _slots.insert(index, entry.key);
     final keys = _relationship.keys.toList();
     final values = _relationship.values.toList();
-    keys.insert(index, slot.key);
-    values.insert(index, child?.key);
+    keys.insert(index, entry.key.key);
+    values.insert(index, entry.value?.key);
     final Iterable<
         MapEntry<GlobalKey<DraggableSlot2State<T>>,
             GlobalKey<DraggableWidgetState<T>>?>> entries = Iterable.generate(
       keys.length,
       (index) => MapEntry(keys[index], values[index]),
     );
+
     _relationship
       ..clear()
       ..addEntries(entries);
@@ -507,21 +519,26 @@ class DraggableContainerState<T extends DraggableItem>
       setState(() {});
     }
   }
-}
 
-class DeleteItemButton extends StatelessWidget {
-  final Widget child;
+  replaceSlot(int index, T? item) {
+    items[index] = item;
+    final key = _relationship.keys.elementAt(index);
+    if (_relationship[key] != null) {
+      _children.remove(_relationship[key]!.currentWidget);
+    }
+    final child =
+        createItem(index: index, item: item, rect: key.currentState!.rect);
+    if (child != null) {
+      _children.add(child);
+    }
+    _relationship[key] = child?.key;
+    setState(() {});
+  }
 
-  const DeleteItemButton({
-    Key? key,
-    required this.child,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return MetaData(
-      metaData: this,
-      child: AbsorbPointer(child: child),
-    );
+  MapEntry<DraggableSlot2<T>, DraggableWidget<T>?> _create(int index, T? item) {
+    final Rect rect = calcSlotRect(index: index, layoutWidth: layoutWidth);
+    final slot = createSlot(index: index, item: item, rect: rect);
+    final child = createItem(index: index, item: item, rect: rect);
+    return MapEntry(slot, child);
   }
 }

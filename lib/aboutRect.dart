@@ -26,6 +26,7 @@ mixin AboutRect {
     _slots
       ..clear()
       ..addAll(list.map((context) => getRect(context)));
+    // print('buildSlotRectCaches $_slots');
   }
 
   @protected
@@ -54,7 +55,7 @@ mixin AboutRect {
         }
       }
     }
-    print('calcSlotRect $index: $lineX,$lineY');
+    // print('calcSlotRect $index: $lineX,$lineY');
     return Rect.fromLTWH(lineX, lineY, width, height);
   }
 

@@ -29,7 +29,7 @@ class DraggableSlot2State<T extends DraggableItem>
   Rect get rect => this._rect;
 
   set rect(Rect value) {
-    _rect = rect;
+    _rect = value;
     setState(() {});
   }
 
