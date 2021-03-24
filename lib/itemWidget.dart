@@ -47,14 +47,14 @@ class DraggableWidgetState<T extends DraggableItem>
     } else {
       _duration = widget.duration;
     }
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   Rect get rect => _rect;
   set rect(Rect value) {
     // print('item更新rect from:$_rect to:$value');
     _rect = value;
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   @override

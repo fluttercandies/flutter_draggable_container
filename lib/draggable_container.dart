@@ -148,11 +148,13 @@ class DraggableContainerState<T extends DraggableItem>
   }
 
   OverlayEntry? _overlayEntry;
+  late GlobalKey _stackKey = GlobalKey();
 
   void _createOverlay() {
     _overlayEntry?.remove();
     if (!_tapOutSizeExitEditMode) return;
     final rect = getRect(context);
+
     _overlayEntry = new OverlayEntry(
       builder: (context) {
         return Stack(
@@ -277,14 +279,24 @@ class DraggableContainerState<T extends DraggableItem>
     buildSlotRectCaches(_relationship.keys.map((e) => e.currentContext!));
   }
 
+  Offset _dragOffset = Offset.zero;
   onPanStart(DragStartDetails _) {
     _buildSlotRectCaches();
     pickUp = findItemByEventPosition(_.globalPosition);
     if (pickUp != null) {
-      _children.remove(pickUp!.widget);
-      pickUp!.dragging = true;
+      _dragOffset = getRect(_stackKey.currentContext!).topLeft;
+      _createOverlay();
       _fromSlot = findSlotFromItemState(pickUp!);
       print('panStart $_fromSlot');
+      _children.remove(pickUp!.widget);
+      pickUp!.dragging = true;
+      final offset = pickUp!.rect.topLeft + _dragOffset;
+      pickUp!.rect = Rect.fromLTWH(
+        offset.dx,
+        offset.dy,
+        pickUp!.rect.width,
+        pickUp!.rect.height,
+      );
       setState(() {});
     }
   }
@@ -319,12 +331,30 @@ class DraggableContainerState<T extends DraggableItem>
   onPanEnd(_) {
     if (pickUp != null) {
       print('panEnd');
-      _children.add(pickUp!.widget);
-      pickUp!.dragging = false;
-      pickUp!.rect = _fromSlot!.currentState!.rect;
-      _relationship[_fromSlot!] = pickUp!.widget.key;
-      pickUp = null;
-      _fromSlot = null;
+      final _pickUp = this.pickUp!;
+      final _fromSlot = this._fromSlot!;
+      _children.add(_pickUp.widget);
+      this.pickUp = null;
+      this._fromSlot = null;
+      final offset = _pickUp.rect.topLeft - _dragOffset;
+      _pickUp.rect = Rect.fromLTWH(
+        offset.dx,
+        offset.dy,
+        _pickUp.rect.width,
+        _pickUp.rect.height,
+      );
+      SchedulerBinding.instance?.addPostFrameCallback((timeStamp) {
+        _pickUp.dragging = false;
+        _pickUp.rect = Rect.fromLTWH(
+          _fromSlot.currentState!.rect.left,
+          _fromSlot.currentState!.rect.top,
+          _fromSlot.currentState!.rect.width,
+          _fromSlot.currentState!.rect.height,
+        );
+      });
+      _relationship[_fromSlot] = _pickUp.widget.key;
+      _createOverlay();
+      setState(() {});
     }
   }
 
@@ -428,6 +458,7 @@ class DraggableContainerState<T extends DraggableItem>
           return Container(
             height: height,
             child: Stack(
+              key: _stackKey,
               clipBehavior: Clip.none,
               children: [
                 ..._slots,
