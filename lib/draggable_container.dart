@@ -155,7 +155,7 @@ class DraggableContainerState<T extends DraggableItem>
   void _createOverlay() {
     _overlayEntry?.remove();
     if (!_tapOutSizeExitEditMode) return;
-    final rect = getRect(context);
+    // final rect = getRect(context);
 
     _overlayEntry = new OverlayEntry(
       builder: (context) {
