@@ -30,7 +30,7 @@ class MyItem extends DraggableItem {
   MyItem(this.index)
       :
         // _fixed = index % 2 == 0,
-        _fixed = index == 7,
+        _fixed = index == 3,
         // _deletable = index % 2 == 1,
         _deletable = true,
         color = randomColor();
@@ -101,6 +101,14 @@ class _MyHomePage extends State<MyHomePage> {
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
             ),
+            draggingDecoration: BoxDecoration(boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 5,
+                // spreadRadius: 5,
+                offset: Offset(0, 5),
+              ),
+            ]),
             // gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
             //   maxCrossAxisExtent: 150,
             //   crossAxisSpacing: 10,

@@ -42,6 +42,7 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
   final Function(int newIndex, int oldIndex)? dragEnd;
   final Function(bool editting)? onEditModeChange;
   final bool? tapOutSizeExitEdieMode;
+  final BoxDecoration? draggingDecoration;
 
   const DraggableContainer({
     Key? key,
@@ -54,6 +55,7 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
     this.dragEnd,
     this.onEditModeChange,
     this.tapOutSizeExitEdieMode,
+    this.draggingDecoration,
     Duration? animationDuration,
   })  : animationDuration =
             animationDuration ?? const Duration(milliseconds: 200),
@@ -162,7 +164,7 @@ class DraggableContainerState<T extends DraggableItem>
             Listener(
               behavior: HitTestBehavior.translucent,
               onPointerUp: (e) {
-                if (rect.contains(e.position) == false && pickUp == null) {
+                if (findSlotByOffset(e.position) == -1 && pickUp == null) {
                   editMode = false;
                 }
               },
@@ -244,6 +246,7 @@ class DraggableContainerState<T extends DraggableItem>
       item: item,
       duration: widget.animationDuration,
       child: child,
+      draggingDecoration: widget.draggingDecoration,
       deleteButton: GestureDetector(
         child: DeleteItemButton(child: button),
         onTap: () {

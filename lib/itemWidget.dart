@@ -9,14 +9,16 @@ class DraggableWidget<T extends DraggableItem> extends StatefulWidget {
   final Widget child;
   final Widget deleteButton;
   final Duration duration;
+  final BoxDecoration? draggingDecoration;
 
   const DraggableWidget({
     required this.key,
     required this.rect,
     required this.child,
-    this.item,
     required this.duration,
     required this.deleteButton,
+    this.item,
+    this.draggingDecoration,
   }) : super(key: key);
 
   @override
@@ -59,24 +61,31 @@ class DraggableWidgetState<T extends DraggableItem>
 
   @override
   Widget build(BuildContext context) {
+    Widget child = MetaData(
+      metaData: this,
+      child: Stack(
+        children: [
+          Positioned.fill(child: widget.child),
+          if (_edit && item?.deletable() == true)
+            Positioned(
+              right: 0,
+              top: 0,
+              child: widget.deleteButton,
+            ),
+        ],
+      ),
+    );
+    if (_dragging && widget.draggingDecoration != null) {
+      child = Container(
+        decoration: widget.draggingDecoration,
+        child: child,
+      );
+    }
     return AnimatedPositioned.fromRect(
       rect: _rect,
       duration: _duration,
       // curve: Curves.bounceInOut,
-      child: MetaData(
-        metaData: this,
-        child: Stack(
-          children: [
-            Positioned.fill(child: widget.child),
-            if (_edit && item?.deletable() == true)
-              Positioned(
-                right: 0,
-                top: 0,
-                child: widget.deleteButton,
-              ),
-          ],
-        ),
-      ),
+      child: child,
     );
   }
 }
