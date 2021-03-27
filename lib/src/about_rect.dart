@@ -1,4 +1,4 @@
-import 'package:draggable_container/utils.dart';
+import 'package:draggable_container/src/utils.dart';
 import 'package:flutter/widgets.dart';
 
 /// 关于rect的计算放在这里

@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
-import 'draggable_container.dart';
+import 'draggable_item.dart';
+import '../draggable_container.dart';
 
 class DraggableWidget<T extends DraggableItem> extends StatefulWidget {
   final T? item;
@@ -66,7 +67,7 @@ class DraggableWidgetState<T extends DraggableItem>
       child: Stack(
         children: [
           Positioned.fill(child: widget.child),
-          if (_edit && item?.deletable() == true)
+          if (_edit && item?.deletable == true)
             Positioned(
               right: 0,
               top: 0,

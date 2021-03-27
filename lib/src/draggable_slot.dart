@@ -1,15 +1,15 @@
 import 'package:flutter/widgets.dart';
 
-import 'draggable_container.dart';
+import 'draggable_item.dart';
 
-class DraggableSlot2<T extends DraggableItem> extends StatefulWidget {
-  final GlobalKey<DraggableSlot2State<T>> key;
+class DraggableSlot<T extends DraggableItem> extends StatefulWidget {
+  final GlobalKey<DraggableSlotState<T>> key;
   final T? item;
   final Widget slot;
   final Rect rect;
   final Duration duration;
 
-  const DraggableSlot2({
+  const DraggableSlot({
     required this.key,
     required this.slot,
     required this.rect,
@@ -18,11 +18,11 @@ class DraggableSlot2<T extends DraggableItem> extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  DraggableSlot2State<T> createState() => DraggableSlot2State<T>();
+  DraggableSlotState<T> createState() => DraggableSlotState<T>();
 }
 
-class DraggableSlot2State<T extends DraggableItem>
-    extends State<DraggableSlot2<T>> {
+class DraggableSlotState<T extends DraggableItem>
+    extends State<DraggableSlot<T>> {
   late T? item = widget.item;
   late Rect _rect = widget.rect;
 

@@ -24,39 +24,32 @@ class MyApp extends StatelessWidget {
 class MyItem extends DraggableItem {
   final Color color;
   final int index;
-  final bool _deletable;
-  bool _fixed = false;
+  bool deletable;
+  bool fixed;
 
-  MyItem(this.index)
-      :
-        // _fixed = index % 2 == 0,
-        _fixed = index == 3,
-        // _deletable = index % 2 == 1,
-        _deletable = true,
-        color = randomColor();
-
-  @override
-  bool deletable() => _deletable;
-
-  @override
-  bool fixed() => _fixed;
+  MyItem({
+    @required this.index,
+    this.deletable = true,
+    this.fixed = false,
+    Color color,
+  }) : color = color ?? randomColor();
 
   @override
   String toString() {
-    return '<MyItem> ${this.hashCode}';
+    return '<MyItem> $index';
   }
 }
 
 class AddItem extends DraggableItem {
   @override
-  bool deletable() => false;
+  bool get deletable => false;
 
   @override
-  bool fixed() => true;
+  bool get fixed => true;
 
   @override
   String toString() {
-    return '<AddItem> ${this.hashCode}';
+    return '<AddItem>';
   }
 }
 
@@ -73,6 +66,7 @@ class _MyHomePage extends State<MyHomePage> {
   final key = GlobalKey<DraggableContainerState<DraggableItem>>();
 
   bool editting = false;
+
   void editModeChange(bool val) {
     editting = val;
     setState(() {});
@@ -105,7 +99,6 @@ class _MyHomePage extends State<MyHomePage> {
               BoxShadow(
                 color: Colors.black.withOpacity(0.3),
                 blurRadius: 5,
-                // spreadRadius: 5,
                 offset: Offset(0, 5),
               ),
             ]),
@@ -115,9 +108,10 @@ class _MyHomePage extends State<MyHomePage> {
             //   mainAxisSpacing: 10,
             // ),
             padding: EdgeInsets.all(10),
-            dragEnd: (newIndex, oldIndex) {},
+            onChange: (List<DraggableItem> items) {
+              print('onChange $items');
+            },
             itemBuilder: (_, DraggableItem item, int index) {
-              print('itemBuilder $index $item');
               if (item is AddItem) {
                 return ElevatedButton(
                   child: Column(
@@ -134,14 +128,16 @@ class _MyHomePage extends State<MyHomePage> {
                     ],
                   ),
                   onPressed: () {
+                    final notNullLength =
+                        key.currentState.items.where((e) => e != null).length;
                     if (key.currentState.slots.length < 9) {
                       key.currentState.insertSlot(
                           0,
                           MyItem(
-                            key.currentState.slots.length,
+                            index: key.currentState.slots.length,
                           ));
-                    } else {
-                      key.currentState.replaceSlot(8, MyItem(99));
+                    } else if (notNullLength >= 9) {
+                      key.currentState.replaceItem(8, MyItem(index: 99));
                     }
                   },
                 );
@@ -150,7 +146,7 @@ class _MyHomePage extends State<MyHomePage> {
                   elevation: 0,
                   borderOnForeground: false,
                   child: Container(
-                    color: randomColor(),
+                    color: item.color,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -164,7 +160,17 @@ class _MyHomePage extends State<MyHomePage> {
                             ],
                           ),
                         ),
-                        if (item.fixed()) Icon(Icons.lock_outline),
+                        SizedBox(height: 5),
+                        ElevatedButton.icon(
+                          icon: Icon(item.fixed
+                              ? Icons.lock_outline
+                              : Icons.lock_open),
+                          label: Text(item.fixed ? 'Unlock' : 'Lock'),
+                          onPressed: () {
+                            item.fixed = !item.fixed;
+                            setState(() {});
+                          },
+                        ),
                       ],
                     ),
                   ),
@@ -191,7 +197,13 @@ class _MyHomePage extends State<MyHomePage> {
             child: Text('hi'),
           ),
         ],
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.print),
+        onPressed: () {
+          print(key.currentState.items);
+        },
+      ),
     );
   }
 }
