@@ -1,13 +1,13 @@
 import 'package:flutter/widgets.dart';
 
 import 'draggable_item.dart';
-import '../draggable_container.dart';
+import 'draggable_container.dart';
 
 class DraggableWidget<T extends DraggableItem> extends StatefulWidget {
   final T? item;
   final GlobalKey<DraggableWidgetState<T>> key;
   final Rect rect;
-  final Widget child;
+  final NullableItemBuilder<T> itemBuilder;
   final Widget deleteButton;
   final Duration duration;
   final BoxDecoration? draggingDecoration;
@@ -15,10 +15,10 @@ class DraggableWidget<T extends DraggableItem> extends StatefulWidget {
   const DraggableWidget({
     required this.key,
     required this.rect,
-    required this.child,
+    required this.itemBuilder,
     required this.duration,
     required this.deleteButton,
-    this.item,
+    required this.item,
     this.draggingDecoration,
   }) : super(key: key);
 
@@ -33,8 +33,15 @@ class DraggableWidgetState<T extends DraggableItem>
   bool _dragging = false;
   bool _edit = false;
   late Duration _duration = widget.duration;
+  Widget? child;
 
   bool get edit => this._edit;
+
+  @override
+  void initState() {
+    child = widget.itemBuilder(context, widget.item);
+    super.initState();
+  }
 
   set edit(bool value) {
     this._edit = value;
@@ -53,7 +60,13 @@ class DraggableWidgetState<T extends DraggableItem>
     if (mounted) setState(() {});
   }
 
+  update() {
+    child = widget.itemBuilder(context, widget.item);
+    if (mounted) setState(() {});
+  }
+
   Rect get rect => _rect;
+
   set rect(Rect value) {
     // print('item更新rect from:$_rect to:$value');
     _rect = value;
@@ -66,7 +79,7 @@ class DraggableWidgetState<T extends DraggableItem>
       metaData: this,
       child: Stack(
         children: [
-          Positioned.fill(child: widget.child),
+          if (this.child != null) Positioned.fill(child: this.child!),
           if (_edit && item?.deletable == true)
             Positioned(
               right: 0,

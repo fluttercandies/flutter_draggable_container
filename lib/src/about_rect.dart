@@ -72,6 +72,7 @@ mixin AboutRect {
       _crossSpacing = delegate.crossAxisSpacing;
       _mainSpacing = delegate.mainAxisSpacing;
       width = delegate.maxCrossAxisExtent;
+      if (width > layoutWidth) width = layoutWidth;
       height = delegate.mainAxisExtent ?? width * delegate.childAspectRatio;
     }
     _itemSize = Size(width.roundToDouble(), height.roundToDouble());

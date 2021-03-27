@@ -18,7 +18,6 @@ import 'utils.dart';
 typedef Widget? NullableItemBuilder<T extends DraggableItem>(
   BuildContext context,
   T? item,
-  int index,
 );
 
 class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
@@ -29,9 +28,10 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
   final SliverGridDelegate gridDelegate;
   final EdgeInsets? padding;
   final Duration animationDuration;
-  final void Function(List<T?> items)? onChange;
-  final void Function(bool editting)? onEditModeChange;
-  final bool? tapOutSizeExitEdieMode;
+  final void Function(List<T?> items)? onChanged;
+  final void Function(bool editting)? onEditModeChanged;
+  final Future<bool> Function(T? item, int slotIndex)? beforeRemove;
+  final bool? tapOutSideExitEditMode;
   final BoxDecoration? draggingDecoration;
 
   const DraggableContainer({
@@ -42,9 +42,10 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
     this.deleteButtonBuilder,
     this.slotBuilder,
     this.padding,
-    this.onChange,
-    this.onEditModeChange,
-    this.tapOutSizeExitEdieMode,
+    this.onChanged,
+    this.onEditModeChanged,
+    this.beforeRemove,
+    this.tapOutSideExitEditMode,
     this.draggingDecoration,
     Duration? animationDuration,
   })  : animationDuration =
@@ -56,9 +57,10 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
 }
 
 class DraggableContainerState<T extends DraggableItem>
-    extends State<DraggableContainer<T>>
-    with SingleTickerProviderStateMixin, AboutRect {
-  late final List<T?> items = widget.items.toList();
+    extends State<DraggableContainer<T>> with AboutRect {
+  late final List<T?> _items = [];
+
+  List<T?> get items => _items.toList();
   final Map<GlobalKey<DraggableSlotState<T>>,
       GlobalKey<DraggableWidgetState<T>>?> _relationship = {};
   final List<DraggableSlot<T>> _slots = [];
@@ -104,15 +106,15 @@ class DraggableContainerState<T extends DraggableItem>
   GlobalKey<DraggableWidgetState>? draggingKey;
 
   Size get itemSize => super.itemSize;
-  late bool _tapOutSizeExitEditMode = widget.tapOutSizeExitEdieMode ?? true;
+  late bool _tapOutSideExitEditMode = widget.tapOutSideExitEditMode ?? true;
 
-  bool get tapOutSideExitEditMode => this._tapOutSizeExitEditMode;
+  bool get tapOutSideExitEditMode => this._tapOutSideExitEditMode;
 
   Map<GlobalKey<DraggableSlotState<T>>, GlobalKey<DraggableWidgetState<T>>?>
       get relationship => _relationship;
 
   set tapOutSideExitEditMode(bool value) =>
-      this._tapOutSizeExitEditMode = value;
+      this._tapOutSideExitEditMode = value;
 
   bool _editMode = false;
 
@@ -139,34 +141,44 @@ class DraggableContainerState<T extends DraggableItem>
       item.currentState?.edit = _editMode;
     });
     setState(() {});
-    widget.onEditModeChange?.call(_editMode);
+    widget.onEditModeChanged?.call(_editMode);
   }
 
   OverlayEntry? _overlayEntry;
-  late GlobalKey _stackKey = GlobalKey();
+  final GlobalKey _containerKey = GlobalKey(), _stackKey = GlobalKey();
+
+  late Rect _containerRect;
 
   void _createOverlay() {
     print('_createOverlay');
     _overlayEntry?.remove();
-    if (!_tapOutSizeExitEditMode) return;
-    final rect = getRect(context);
+    _containerRect = getRect(_containerKey.currentContext!);
 
-    _overlayEntry = new OverlayEntry(
+    _overlayEntry = OverlayEntry(
       builder: (context) {
         return Stack(
           children: [
             Listener(
               behavior: HitTestBehavior.translucent,
+              onPointerMove: (e) {
+                print('onPointerMove');
+                _createOverlay();
+              },
               onPointerUp: (e) {
-                if (!rect.contains(e.position) && pickUp == null) {
+                if (_tapOutSideExitEditMode &&
+                    !_containerRect.contains(e.position) &&
+                    pickUp == null) {
                   editMode = false;
                 }
               },
             ),
             // Positioned.fromRect(
-            //   rect: rect,
-            //   child: Container(
-            //     color: Colors.yellow.withOpacity(0.3),
+            //   rect: _containerRect,
+            //   child: Listener(
+            //     behavior: HitTestBehavior.opaque,
+            //     child: Container(
+            //       color: Colors.yellow.withOpacity(0.3),
+            //     ),
             //   ),
             // ),
             if (pickUp != null) pickUp!.widget,
@@ -178,7 +190,7 @@ class DraggableContainerState<T extends DraggableItem>
   }
 
   void _removeOverlay() {
-    print('_removeOverlay');
+    // print('_removeOverlay');
     _overlayEntry?.remove();
     _overlayEntry = null;
   }
@@ -191,13 +203,8 @@ class DraggableContainerState<T extends DraggableItem>
     _slots.clear();
     _children.clear();
     _relationship.clear();
-    List.generate(items.length, (index) {
-      // didUpdateWidget 创建DraggableWidget
-      final rect = calcSlotRect(index: index, layoutWidth: layoutWidth);
-      // addSlot(widget.items[index], update: false);
-      final slot = _createSlot(index: index, item: items[index], rect: rect);
-      _relationship[slot.key] = null;
-      _slots.add(slot);
+    List.generate(widget.items.length, (index) {
+      addSlot(widget.items[index], update: false);
     });
   }
 
@@ -224,9 +231,9 @@ class DraggableContainerState<T extends DraggableItem>
     T? item,
     required Rect rect,
   }) {
-    Widget? child = widget.itemBuilder(context, item, index);
+    Widget? child = widget.itemBuilder(context, item);
     if (child == null) return null;
-    Widget button = widget.deleteButtonBuilder?.call(context, item, index) ??
+    Widget button = widget.deleteButtonBuilder?.call(context, item) ??
         Container(
           width: 14,
           height: 14,
@@ -240,17 +247,28 @@ class DraggableContainerState<T extends DraggableItem>
             color: Colors.white,
           ),
         );
+    final key = GlobalKey<DraggableWidgetState<T>>();
     return DraggableWidget(
-      key: GlobalKey<DraggableWidgetState<T>>(),
+      key: key,
       rect: rect,
       item: item,
       duration: widget.animationDuration,
-      child: child,
+      itemBuilder: widget.itemBuilder,
       draggingDecoration: widget.draggingDecoration,
       deleteButton: GestureDetector(
         child: DeleteItemButton(child: button),
-        onTap: () {
-          removeItem(item!);
+        onTap: () async {
+          var isTrue = true;
+          if (widget.beforeRemove != null)
+            isTrue = await widget.beforeRemove!(
+              item,
+              _relationship.values.toList().indexOf(key),
+            );
+          if (isTrue == true) {
+            removeItem(item!);
+            reorder();
+            widget.onChanged?.call(items);
+          }
         },
       ),
     );
@@ -258,18 +276,13 @@ class DraggableContainerState<T extends DraggableItem>
 
   @override
   void didUpdateWidget(DraggableContainer<T> oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    print('didUpdateWidget $pickUp');
-    if (pickUp != null) return;
-    _children.clear();
-    final keys = _relationship.keys.toList();
-    keys.forEach((key) {
-      final index = keys.indexOf(key);
-      final rect = calcSlotRect(index: index, layoutWidth: layoutWidth);
-      final child = _createItem(index: index, rect: rect, item: items[index]);
-      _relationship[key] = child?.key;
-      if (child != null) _children.add(child);
+    print('didUpdateWidget');
+    _relationship.values.forEach((element) {
+      if (element != null) {
+        element.currentState?.update();
+      }
     });
+    super.didUpdateWidget(oldWidget);
   }
 
   bool _isHitItem(Offset globalPosition) {
@@ -307,7 +320,6 @@ class DraggableContainerState<T extends DraggableItem>
       _dragOffset = getRect(_stackKey.currentContext!).topLeft;
       _fromSlot = findSlotFromItemState(_pickUp);
       _children.remove(_pickUp.widget);
-      print('panStart children.length ${_children.length}');
       _pickUp.dragging = true;
       final offset = pickUp!.rect.topLeft + _dragOffset;
       _pickUp.rect = Rect.fromLTWH(
@@ -377,7 +389,7 @@ class DraggableContainerState<T extends DraggableItem>
       setState(() {});
     }
 
-    widget.onChange?.call(items);
+    widget.onChanged?.call(items);
   }
 
   late Offset longPressPosition;
@@ -410,64 +422,64 @@ class DraggableContainerState<T extends DraggableItem>
         toIndex = slots.indexOf(toSlot);
     final start = math.min(fromIndex, toIndex),
         end = math.max(fromIndex, toIndex);
-    final T? fromItem = items[fromIndex];
-    // items[fromIndex] = null;
+    final T? fromItem = _items[fromIndex];
+    final T? toItem = _items[toIndex];
     if (end - start == 1) {
       // 前后交换
-      print('前后位置交换： $start to $end');
+      // print('前后位置交换： $start to $end');
       _relationship[toSlot]?.currentState?.rect = _fromSlot!.currentState!.rect;
       _relationship[_fromSlot!] = _relationship[toSlot];
-      items[fromIndex] = items[toIndex];
-      items[toIndex] = fromItem;
+      _items[start] = _items[end];
+      _items[end] = fromItem;
       _fromSlot = toSlot;
-    } else if (end - start > 1) {
+    } else if (end - start > 1 && (toItem == null || toItem.fixed == false)) {
       // 多个交换
       _relationship[_fromSlot!] = null;
+      _items[fromIndex] = null;
       if (fromIndex == start) {
         // 从前往后拖动
-        print('从前往后拖动： $start to $end');
-        items[fromIndex] = null;
+        // print('从前往后拖动： $start to $end $fromItem');
         reorder(start: start, end: end);
-        items[toIndex] = fromItem;
       } else {
-        print('从后往前拖动： $start to $end');
-        items[fromIndex] = null;
+        // print('从后往前拖动： $start to $end $fromItem');
         reorder(start: start, end: end, reverse: true);
-        items[toIndex] = fromItem;
       }
-      // _fromSlot = toSlot;
-      // items[toIndex] = fromItem;
+      _fromSlot = toSlot;
+      _items[toIndex] = fromItem;
     }
   }
 
   void reorder({int start: 0, int end: -1, reverse: false}) {
-    if (end == -1 || end > items.length) end = items.length;
+    var _items = this.items;
+    if (end == -1 || end > _items.length) end = _items.length;
     var entries = _relationship.entries.toList();
-    var _items = items.toList();
     if (reverse) {
       entries = entries.reversed.toList();
       _items = _items.reversed.toList();
-      var _start = _items.length - start - 1;
+      var _start = _items.length - start;
       end = _items.length - end - 1;
       start = end;
       end = _start;
+    } else {
+      end++;
     }
-    print('reverse:$reverse, $start to $end');
+    // print('reverse:$reverse, $start to $end');
     for (var i = start; i < end; i++) {
       final entry = entries[i];
       final slot = entry.key;
       final item = _items[i];
-      print('i $i $item');
+      // print('i $i $item');
       if (item == null) {
         int next = -1;
         for (var j = i; j < end; j++) {
-          print('j $j');
+          // print('j $j');
+          if (j >= _items.length) break;
           if (_items[j]?.fixed == false) {
             next = j;
             break;
           }
         }
-        print('next $next');
+        // print('next $next');
         if (next == -1) {
           break;
         } else {
@@ -483,38 +495,36 @@ class DraggableContainerState<T extends DraggableItem>
       }
     }
     if (reverse) _items = _items.reversed.toList();
-    items
+    this._items
       ..clear()
       ..addAll(_items);
   }
 
-  int findPreviousDraggableItem({
-    required int start,
-    int end = -1,
-  }) {
-    if (end == -1) end = items.length - 1;
-    for (var i = end; i > 0; i--) {
-      if (items[i]?.fixed == false) return i;
-    }
-    return -1;
-  }
-
   @override
   Widget build(BuildContext context) {
-    print('build children.length:${_children.length}');
+    print('build');
     Widget child = RawGestureDetector(
       gestures: _gestures,
       child: LayoutBuilder(
+        key: _containerKey,
         builder: (_, BoxConstraints constraints) {
           final _layoutWidth = constraints.maxWidth == double.infinity
               ? MediaQuery.of(context).size.width.roundToDouble()
               : constraints.maxWidth.roundToDouble();
           if (_layoutWidth != layoutWidth) {
             layoutWidth = _layoutWidth;
-            print('layoutBuild $layoutWidth');
+            try {
+              _containerRect = getRect(_containerKey.currentContext!);
+            } catch (e) {}
+            // print('layoutBuild $layoutWidth');
             calcItemSize(widget.gridDelegate, layoutWidth);
             _createSlots();
             _updateSlots();
+            if (_editMode) {
+              SchedulerBinding.instance!.addPostFrameCallback((timeStamp) {
+                _createOverlay();
+              });
+            }
           }
           // 容器高度
           final height = constraints.maxHeight == double.infinity
@@ -550,7 +560,7 @@ class DraggableContainerState<T extends DraggableItem>
       item: item,
       rect: rect,
       duration: widget.animationDuration,
-      slot: widget.slotBuilder?.call(context, item, index) ??
+      slot: widget.slotBuilder?.call(context, item) ??
           Container(
             decoration: BoxDecoration(
               // borderRadius: BorderRadius.all(Radius.circular(10)),
@@ -559,7 +569,7 @@ class DraggableContainerState<T extends DraggableItem>
                 color: Colors.blue,
               ),
             ),
-            child: Center(child: Text(_relationship.keys.length.toString())),
+            // child: Center(child: Text(_relationship.keys.length.toString())),
           ),
     );
   }
@@ -572,8 +582,8 @@ class DraggableContainerState<T extends DraggableItem>
   }
 
   void addSlot(T? item, {bool update = true}) {
-    final index = items.length;
-    items.add(item);
+    final index = _items.length;
+    _items.add(item);
     final Rect rect = calcSlotRect(index: index, layoutWidth: layoutWidth);
     final slot = _createSlot(index: index, item: item, rect: rect);
     final child = _createItem(index: index, item: item, rect: rect);
@@ -586,13 +596,13 @@ class DraggableContainerState<T extends DraggableItem>
     if (mounted && update) {
       _updateSlots();
       setState(() {});
+      widget.onChanged?.call(items);
     }
-    widget.onChange?.call(items.toList());
   }
 
   void insertSlot(int index, T? item, {bool update = true}) {
     print('insertSlot $index');
-    items.insert(index, item);
+    _items.insert(index, item);
     final entry = _create(index, item);
     if (entry.value != null) {
       _children.add(entry.value!);
@@ -616,26 +626,32 @@ class DraggableContainerState<T extends DraggableItem>
       _updateSlots();
       setState(() {});
     }
-    widget.onChange?.call(items.toList());
+    widget.onChanged?.call(items);
   }
 
-  void removeSlot(int index) {
+  T? removeSlot(int index) {
     final key = _relationship.keys.elementAt(index);
+    final item = _items[index];
+    if (_relationship[key] != null) {
+      _children.remove(_relationship[key]?.currentWidget);
+    }
     _relationship.remove(key);
     _slots.remove(key.currentWidget);
+    _items.removeAt(index);
     if (mounted) {
       _updateSlots();
       setState(() {});
     }
-    widget.onChange?.call(items.toList());
+    widget.onChanged?.call(items);
+    return item;
   }
 
   void replaceItem(int index, T? item) {
     assert(
-      index.clamp(0, items.length - 1) == index,
-      'Out of items range [${0}-${items.length}]:$index',
+      index.clamp(0, _items.length - 1) == index,
+      'Out of items range [${0}-${_items.length}]:$index',
     );
-    items[index] = item;
+    _items[index] = item;
     final slot = _relationship.keys.elementAt(index);
     if (_relationship[slot] != null) {
       _children.remove(_relationship[slot]!.currentWidget);
@@ -646,7 +662,7 @@ class DraggableContainerState<T extends DraggableItem>
       _children.add(child);
     }
     _relationship[slot] = child?.key;
-    widget.onChange?.call(items.toList());
+    widget.onChanged?.call(items);
     if (mounted) {
       _updateSlots();
       setState(() {});
@@ -654,31 +670,31 @@ class DraggableContainerState<T extends DraggableItem>
   }
 
   int removeItem(T item) {
-    final index = items.indexOf(item);
+    final index = _items.indexOf(item);
     if (index > -1) {
       removeItemAt(index);
     }
+    widget.onChanged?.call(items);
     return index;
   }
 
   T? removeItemAt(int index) {
     assert(
-      index.clamp(0, items.length - 1) == index,
-      'Out of items range [${0}-${items.length}]:$index',
+      index.clamp(0, _items.length - 1) == index,
+      'Out of items range [${0}-${_items.length}]:$index',
     );
-    final item = items[index];
+    final item = _items[index];
     final slot = _relationship.keys.elementAt(index);
     final child = _relationship[slot];
-    items[index] = null;
+    _items[index] = null;
     _relationship[slot] = null;
-    widget.onChange?.call(items.toList());
     _children.remove(child?.currentWidget);
     reorder();
     if (mounted) {
       _updateSlots();
       setState(() {});
     }
-    widget.onChange?.call(items.toList());
+    widget.onChanged?.call(items);
     return item;
   }
 

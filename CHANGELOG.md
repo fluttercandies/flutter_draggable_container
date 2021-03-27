@@ -1,3 +1,15 @@
+### [1.0.2+2]
+Updated README.md.
+
+### [1.0.2+1]
+Updated.
+
+### [1.0.2]
+Updated.
+
+### [1.0.1]
+Fixed the '_dragTo' logic.
+
 ### [1.0.0]
 Support null safety.
 Support GridSliverDelegate.
