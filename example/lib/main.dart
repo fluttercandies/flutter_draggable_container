@@ -166,6 +166,14 @@ class _MyHomePage extends State<MyHomePage> {
             ),
             padding: EdgeInsets.all(10),
             onChanged: (List<DraggableItem> items) {
+              if (items.length < 9) {
+                final noAddItem = items.firstWhere(
+                      (element) => element is AddItem,
+                      orElse: () => null,
+                    ) ==
+                    null;
+                if (noAddItem) key.currentState.addSlot(AddItem());
+              }
               setState(() {});
             },
             beforeDrop: ({fromItem, fromSlotIndex, toItem, toSlotIndex}) {

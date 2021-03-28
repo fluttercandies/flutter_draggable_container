@@ -19,6 +19,14 @@ typedef Widget? NullableItemBuilder<T extends DraggableItem>(
   BuildContext context,
   T? item,
 );
+typedef Future<bool> BeforeDropCallBack<T extends DraggableItem>({
+  T? fromItem,
+  int fromSlotIndex,
+  T? toItem,
+  int toSlotIndex,
+});
+typedef Future<bool> BeforeRemoveCallBack<T extends DraggableItem>(
+    T? item, int slotIndex);
 
 class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
   final List<T?> items;
@@ -30,13 +38,8 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
   final Duration animationDuration;
   final void Function(List<T?> items)? onChanged;
   final void Function(bool editting)? onEditModeChanged;
-  final Future<bool> Function(T? item, int slotIndex)? beforeRemove;
-  final Future<bool> Function({
-    T? fromItem,
-    int fromSlotIndex,
-    T? toItem,
-    int toSlotIndex,
-  })? beforeDrop;
+  final BeforeRemoveCallBack<T>? beforeRemove;
+  final BeforeDropCallBack<T>? beforeDrop;
   final bool? tapOutSideExitEditMode;
   final BoxDecoration? draggingDecoration;
 
@@ -72,6 +75,10 @@ class DraggableContainerState<T extends DraggableItem>
       GlobalKey<DraggableWidgetState<T>>?> _relationship = {};
   final List<DraggableSlot<T>> _slots = [];
   final List<DraggableWidget<T>> _children = [];
+
+  late BeforeDropCallBack<T>? beforeDrop = widget.beforeDrop;
+  late BeforeRemoveCallBack<T>? beforeRemove = widget.beforeRemove;
+
   double layoutWidth = 0;
   double _maxHeight = 0;
 
@@ -260,6 +267,7 @@ class DraggableContainerState<T extends DraggableItem>
       key: key,
       rect: rect,
       item: item,
+      edit: _editMode,
       duration: widget.animationDuration,
       itemBuilder: widget.itemBuilder,
       draggingDecoration: widget.draggingDecoration,
@@ -267,8 +275,8 @@ class DraggableContainerState<T extends DraggableItem>
         child: DeleteItemButton(child: button),
         onTap: () async {
           var isTrue = true;
-          if (widget.beforeRemove != null)
-            isTrue = await widget.beforeRemove!(
+          if (beforeRemove != null)
+            isTrue = await beforeRemove!(
               item,
               _relationship.values.toList().indexOf(key),
             );
@@ -287,7 +295,9 @@ class DraggableContainerState<T extends DraggableItem>
     // print('didUpdateWidget');
     _relationship.values.forEach((element) {
       if (element != null) {
-        element.currentState?.update();
+        element.currentState
+          ?..edit = _editMode
+          ..update();
       }
     });
     super.didUpdateWidget(oldWidget);
@@ -429,25 +439,25 @@ class DraggableContainerState<T extends DraggableItem>
         end = math.max(fromIndex, toIndex);
     final T? fromItem = _items[fromIndex];
     final T? toItem = _items[toIndex];
-    var canDrop = toItem?.fixed == false;
-    if (widget.beforeDrop != null) {
-      canDrop = await widget.beforeDrop!.call(
+    var canDrop = toItem == null || !toItem.fixed;
+    if (beforeDrop != null) {
+      canDrop = await beforeDrop!.call(
         fromItem: fromItem,
         fromSlotIndex: fromIndex,
         toItem: toItem,
         toSlotIndex: toIndex,
       );
     }
-    print('_dragTo $canDrop');
+    // print('_dragTo $canDrop');
     if (!canDrop) return;
-    if (end - start == 1 && canDrop) {
+    if (end - start == 1) {
       // 前后交换
-      // print('前后位置交换： $start to $end');
+      print('前后位置交换： $start to $end');
       _relationship[toSlot]?.currentState?.rect = _fromSlot!.currentState!.rect;
       _relationship[_fromSlot!] = _relationship[toSlot];
-      _items[start] = _items[end];
-      _items[end] = fromItem;
-    } else if (end - start > 1 && canDrop) {
+      _items[fromIndex] = toItem;
+      _items[toIndex] = fromItem;
+    } else if (end - start > 1) {
       // 多个交换
       _relationship[_fromSlot!] = null;
       _items[fromIndex] = null;
@@ -471,12 +481,10 @@ class DraggableContainerState<T extends DraggableItem>
     if (reverse) {
       entries = entries.reversed.toList();
       _items = _items.reversed.toList();
-      var _start = _items.length - start;
-      var _end = _items.length - end;
-      start = _end - 1;
-      end = _start - 1;
+      start = _items.length - end - 1;
+      end = _items.length - start - 1;
     }
-    print('reverse:$reverse, $start to $end');
+    // print('reverse:$reverse, $start to $end');
     for (var i = start; i < end; i++) {
       final entry = entries[i];
       final slot = entry.key;
@@ -485,7 +493,7 @@ class DraggableContainerState<T extends DraggableItem>
       if (item == null) {
         int next = -1;
         for (var j = i; j < (end + 1); j++) {
-          print('j $j');
+          // print('j $j');
           if (j >= _items.length) break;
           if (j == end || _items[j]?.fixed == false) {
             next = j;

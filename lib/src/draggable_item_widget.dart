@@ -11,6 +11,7 @@ class DraggableWidget<T extends DraggableItem> extends StatefulWidget {
   final Widget deleteButton;
   final Duration duration;
   final BoxDecoration? draggingDecoration;
+  final bool edit;
 
   const DraggableWidget({
     required this.key,
@@ -19,6 +20,7 @@ class DraggableWidget<T extends DraggableItem> extends StatefulWidget {
     required this.duration,
     required this.deleteButton,
     required this.item,
+    required this.edit,
     this.draggingDecoration,
   }) : super(key: key);
 
@@ -39,6 +41,7 @@ class DraggableWidgetState<T extends DraggableItem>
 
   @override
   void initState() {
+    _edit = widget.edit;
     child = widget.itemBuilder(context, widget.item);
     super.initState();
   }
