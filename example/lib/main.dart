@@ -169,7 +169,8 @@ class _MyHomePage extends State<MyHomePage> {
               setState(() {});
             },
             beforeDrop: ({fromItem, fromSlotIndex, toItem, toSlotIndex}) {
-              print('beforeDrop from $fromSlotIndex to $toSlotIndex');
+              // print('beforeDrop from $fromSlotIndex to $toSlotIndex');
+              /// will override the toItem.fixed property
               return Future.value(true);
             },
             itemBuilder: (_, DraggableItem item) {
