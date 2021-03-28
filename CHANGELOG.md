@@ -1,3 +1,6 @@
+### [1.0.4+1]
+Updated.
+
 ### [1.0.4]
 Add beforeDrop callback.
 
