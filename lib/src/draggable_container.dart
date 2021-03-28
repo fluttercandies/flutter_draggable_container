@@ -150,9 +150,9 @@ class DraggableContainerState<T extends DraggableItem>
   late Rect _containerRect;
 
   void _createOverlay() {
-    // print('_createOverlay');
     _overlayEntry?.remove();
     _containerRect = getRect(_containerKey.currentContext!);
+    // print('_createOverlay $_containerRect');
 
     _overlayEntry = OverlayEntry(
       builder: (context) {
@@ -161,10 +161,11 @@ class DraggableContainerState<T extends DraggableItem>
             Listener(
               behavior: HitTestBehavior.translucent,
               onPointerMove: (e) {
-                // print('onPointerMove');
-                _createOverlay();
+                _containerRect = getRect(_containerKey.currentContext!);
+                // print('onPointerMove $_containerRect');
               },
               onPointerUp: (e) {
+                // print('onPointerUp $_containerRect');
                 if (_tapOutSideExitEditMode &&
                     !_containerRect.contains(e.position) &&
                     pickUp == null) {
