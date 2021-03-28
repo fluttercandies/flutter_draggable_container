@@ -31,6 +31,12 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
   final void Function(List<T?> items)? onChanged;
   final void Function(bool editting)? onEditModeChanged;
   final Future<bool> Function(T? item, int slotIndex)? beforeRemove;
+  final Future<bool> Function({
+    T? fromItem,
+    int fromSlotIndex,
+    T? toItem,
+    int toSlotIndex,
+  })? beforeDrop;
   final bool? tapOutSideExitEditMode;
   final BoxDecoration? draggingDecoration;
 
@@ -45,6 +51,7 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
     this.onChanged,
     this.onEditModeChanged,
     this.beforeRemove,
+    this.beforeDrop,
     this.tapOutSideExitEditMode,
     this.draggingDecoration,
     Duration? animationDuration,
@@ -351,10 +358,7 @@ class DraggableContainerState<T extends DraggableItem>
       if (entryIndex != -1) {
         final entry = _relationship.entries.elementAt(entryIndex);
         final slot = entry.key;
-        // print('panUpdate $_fromSlot $slot');
-        final value = entry.value;
-        if ((value == null || value.currentState?.item?.fixed == false) &&
-            slot != _fromSlot) {
+        if (slot != _fromSlot) {
           _dragTo(slot);
         }
       }
@@ -416,7 +420,7 @@ class DraggableContainerState<T extends DraggableItem>
     onPanEnd(null);
   }
 
-  void _dragTo(GlobalKey<DraggableSlotState<T>> toSlot) {
+  void _dragTo(GlobalKey<DraggableSlotState<T>> toSlot) async {
     if (_fromSlot == null || _fromSlot == toSlot) return;
     final slots = _relationship.keys.toList();
     final fromIndex = slots.indexOf(_fromSlot!),
@@ -425,15 +429,25 @@ class DraggableContainerState<T extends DraggableItem>
         end = math.max(fromIndex, toIndex);
     final T? fromItem = _items[fromIndex];
     final T? toItem = _items[toIndex];
-    if (end - start == 1) {
+    var canDrop = toItem?.fixed == false;
+    if (widget.beforeDrop != null) {
+      canDrop = await widget.beforeDrop!.call(
+        fromItem: fromItem,
+        fromSlotIndex: fromIndex,
+        toItem: toItem,
+        toSlotIndex: toIndex,
+      );
+    }
+    print('_dragTo $canDrop');
+    if (!canDrop) return;
+    if (end - start == 1 && canDrop) {
       // 前后交换
       // print('前后位置交换： $start to $end');
       _relationship[toSlot]?.currentState?.rect = _fromSlot!.currentState!.rect;
       _relationship[_fromSlot!] = _relationship[toSlot];
       _items[start] = _items[end];
       _items[end] = fromItem;
-      _fromSlot = toSlot;
-    } else if (end - start > 1 && (toItem == null || toItem.fixed == false)) {
+    } else if (end - start > 1 && canDrop) {
       // 多个交换
       _relationship[_fromSlot!] = null;
       _items[fromIndex] = null;
@@ -445,9 +459,9 @@ class DraggableContainerState<T extends DraggableItem>
         // print('从后往前拖动： $start to $end $fromItem');
         reorder(start: start, end: end, reverse: true);
       }
-      _fromSlot = toSlot;
       _items[toIndex] = fromItem;
     }
+    _fromSlot = toSlot;
   }
 
   void reorder({int start: 0, int end: -1, reverse: false}) {
@@ -458,13 +472,11 @@ class DraggableContainerState<T extends DraggableItem>
       entries = entries.reversed.toList();
       _items = _items.reversed.toList();
       var _start = _items.length - start;
-      end = _items.length - end - 1;
-      start = end;
-      end = _start;
-    } else {
-      end++;
+      var _end = _items.length - end;
+      start = _end - 1;
+      end = _start - 1;
     }
-    // print('reverse:$reverse, $start to $end');
+    print('reverse:$reverse, $start to $end');
     for (var i = start; i < end; i++) {
       final entry = entries[i];
       final slot = entry.key;
@@ -472,10 +484,10 @@ class DraggableContainerState<T extends DraggableItem>
       // print('i $i $item');
       if (item == null) {
         int next = -1;
-        for (var j = i; j < end; j++) {
-          // print('j $j');
+        for (var j = i; j < (end + 1); j++) {
+          print('j $j');
           if (j >= _items.length) break;
-          if (_items[j]?.fixed == false) {
+          if (j == end || _items[j]?.fixed == false) {
             next = j;
             break;
           }

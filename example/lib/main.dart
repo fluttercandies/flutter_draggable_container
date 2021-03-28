@@ -89,9 +89,10 @@ class _MyHomePage extends State<MyHomePage> {
 
       text.clear();
       text['tapOutSideExitEditMode'] = key.currentState.tapOutSideExitEditMode;
-      text['onChange event'] = widget.onChanged == null ? 'unset' : 'set';
-      text['beforeRemove event'] =
+      text['onChange listener'] = widget.onChanged == null ? 'unset' : 'set';
+      text['beforeRemove listener'] =
           widget.beforeRemove == null ? 'unset' : 'set';
+      text['beforeDrop listener'] = widget.beforeDrop == null ? 'unset' : 'set';
       settings = mapToString(text);
 
       items = key.currentState?.items?.join('\n');
@@ -166,6 +167,10 @@ class _MyHomePage extends State<MyHomePage> {
             padding: EdgeInsets.all(10),
             onChanged: (List<DraggableItem> items) {
               setState(() {});
+            },
+            beforeDrop: ({fromItem, fromSlotIndex, toItem, toSlotIndex}) {
+              print('beforeDrop from $fromSlotIndex to $toSlotIndex');
+              return Future.value(true);
             },
             itemBuilder: (_, DraggableItem item) {
               if (item is AddItem) {

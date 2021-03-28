@@ -1,3 +1,6 @@
+### [1.0.4]
+Add beforeDrop listener.
+
 ### [1.0.3+2]
 Updated the logic about to create the overlay.
 

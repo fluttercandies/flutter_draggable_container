@@ -61,6 +61,13 @@
     - Future\<bool\> beforeRemove(T? item, int slotIndex)
         - 删除item的确认事件，返回true删除，返回false不删除
         - The event for confirm to delete a item, if return true then delete, if false then no action.
+    - Future\<bool\> beforeDrop({T? fromItem, int fromSlotIndex, T? toItem, int toSlotIndex})
+        - 将一个item从A点移到B点后的确认事件，返回true为允许放下，返回false不允许放下，
+
+            会覆盖toItem.fixed属性。
+        - The confirmation event after moving an item from point A to point B. Returns true to allow dropping, returns false to not allow dropping.
+
+            will override the toItem.fixed property.
 
 - DraggableContainerState的方法 / The DraggableContainerState methods:
     - getter / setter bool editMode
