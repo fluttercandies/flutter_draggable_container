@@ -132,21 +132,16 @@ class _MyHomePage extends State<MyHomePage> {
       ),
       body: ListView(
         children: [
-          // ListTile(
-          //   title: Text('DraggableContainer settings'),
-          //   subtitle: Text(settings),
-          // ),
-          // Divider(height: 1),
-          // ListTile(
-          //   title: Text('Current Delegate'),
-          //   subtitle: Text(delegate),
-          // ),
-          // Divider(height: 1),
-          // ListTile(
-          //   title: Text('Current Items'),
-          //   subtitle: Text(items),
-          // ),
-          // Divider(height: 1),
+          ListTile(
+            title: Text('DraggableContainer settings'),
+            subtitle: Text(settings),
+          ),
+          Divider(height: 1),
+          ListTile(
+            title: Text('Current SliverGridDelegate'),
+            subtitle: Text(delegate),
+          ),
+          Divider(height: 1),
           DraggableContainer<DraggableItem>(
             key: key,
             items: data,
@@ -242,8 +237,8 @@ class _MyHomePage extends State<MyHomePage> {
           ),
           Divider(height: 1),
           ListTile(
-            title: Text('Other widget'),
-            subtitle: Text('blah blah blah'),
+            title: Text('Current Items'),
+            subtitle: Text(items),
           ),
         ],
       ),

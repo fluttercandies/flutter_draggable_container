@@ -30,17 +30,17 @@
     
 
 - DraggableContainer的构造函数参数 / The DraggableContainer Constructor parameters
-    - required List<T extends DraggableItem> items
-    - required Widget? NullableItemBuilder<T extends DraggableItem>(BuildContext context, T? item) itemBuilder
+    - required List\<T extends DraggableItem\> items
+    - required Widget? NullableItemBuilder\<T extends DraggableItem\>(BuildContext context, T? item) itemBuilder
         - 子项widget的构建器。
         - Item widget builder.
     - required SliverGirdDelegate gridDelegate
         - 布局依赖于gridDelegate。
         - The layout depends on the gridDelegate.
-    - Widget? NullableItemBuilder<T extends DraggableItem>(BuildContext context, T? item) deleteButtonBuilder
+    - Widget? NullableItemBuilder\<T extends DraggableItem\>(BuildContext context, T? item) deleteButtonBuilder
         - 子项删除按钮的构建器。
         - The delete button builder for the item.
-    - Widget? NullableItemBuilder<T extends DraggableItem>(BuildContext context, T? item) slotBuilder
+    - Widget? NullableItemBuilder\<T extends DraggableItem\>(BuildContext context, T? item) slotBuilder
         - 槽位组件的构建器。
         - The slot widget builder.
     - BoxDecoration? draggingDecoration, default is a shadow style.

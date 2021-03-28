@@ -150,7 +150,7 @@ class DraggableContainerState<T extends DraggableItem>
   late Rect _containerRect;
 
   void _createOverlay() {
-    print('_createOverlay');
+    // print('_createOverlay');
     _overlayEntry?.remove();
     _containerRect = getRect(_containerKey.currentContext!);
 
@@ -161,7 +161,7 @@ class DraggableContainerState<T extends DraggableItem>
             Listener(
               behavior: HitTestBehavior.translucent,
               onPointerMove: (e) {
-                print('onPointerMove');
+                // print('onPointerMove');
                 _createOverlay();
               },
               onPointerUp: (e) {
@@ -276,7 +276,7 @@ class DraggableContainerState<T extends DraggableItem>
 
   @override
   void didUpdateWidget(DraggableContainer<T> oldWidget) {
-    print('didUpdateWidget');
+    // print('didUpdateWidget');
     _relationship.values.forEach((element) {
       if (element != null) {
         element.currentState?.update();
@@ -286,7 +286,7 @@ class DraggableContainerState<T extends DraggableItem>
   }
 
   bool _isHitItem(Offset globalPosition) {
-    return findItemByEventPosition(globalPosition) != null;
+    return findItemByEventPosition(globalPosition)?.item?.fixed == false;
   }
 
   DraggableWidgetState<T>? findItemByEventPosition(Offset globalPosition) {
@@ -362,7 +362,7 @@ class DraggableContainerState<T extends DraggableItem>
 
   onPanEnd(_) {
     if (pickUp != null) {
-      print('panEnd');
+      // print('panEnd');
       final _pickUp = this.pickUp!;
       final _fromSlot = this._fromSlot!;
       _children.add(_pickUp.widget);
@@ -502,7 +502,7 @@ class DraggableContainerState<T extends DraggableItem>
 
   @override
   Widget build(BuildContext context) {
-    print('build');
+    // print('build');
     Widget child = RawGestureDetector(
       gestures: _gestures,
       child: LayoutBuilder(
@@ -601,7 +601,7 @@ class DraggableContainerState<T extends DraggableItem>
   }
 
   void insertSlot(int index, T? item, {bool update = true}) {
-    print('insertSlot $index');
+    // print('insertSlot $index');
     _items.insert(index, item);
     final entry = _create(index, item);
     if (entry.value != null) {
