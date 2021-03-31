@@ -1,3 +1,6 @@
+### [1.0.6]
+Keep to fixed the issue about of v1.0.5.
+
 ### [1.0.5]
 Fixed a bug about when dragging the item from back to front will lost item.
 

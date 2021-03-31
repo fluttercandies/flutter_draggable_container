@@ -60,6 +60,10 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePage extends State<MyHomePage> {
   final data = <DraggableItem>[
+    MyItem(index: 0),
+    MyItem(index: 1),
+    MyItem(index: 2),
+    MyItem(index: 3),
     AddItem(),
   ];
 
@@ -166,14 +170,13 @@ class _MyHomePage extends State<MyHomePage> {
             ),
             padding: EdgeInsets.all(10),
             onChanged: (List<DraggableItem> items) {
-              if (items.length < 9) {
-                final noAddItem = items.firstWhere(
-                      (element) => element is AddItem,
-                      orElse: () => null,
-                    ) ==
-                    null;
-                if (noAddItem) key.currentState.addSlot(AddItem());
-              }
+              final addItem = items.firstWhere(
+                (item) => item is AddItem,
+                orElse: () => null,
+              );
+              // print('has AddItem ${addItem != null}');
+              if (items.length < 9 && addItem == null)
+                key.currentState.addSlot(AddItem());
               setState(() {});
             },
             beforeDrop: ({fromItem, fromSlotIndex, toItem, toSlotIndex}) {
@@ -198,15 +201,14 @@ class _MyHomePage extends State<MyHomePage> {
                     ],
                   ),
                   onPressed: () {
-                    final notNullLength =
-                        key.currentState.items.where((e) => e != null).length;
                     if (key.currentState.slots.length < 9) {
                       key.currentState.insertSlot(
                           0,
                           MyItem(
                             index: key.currentState.slots.length,
                           ));
-                    } else if (notNullLength >= 9) {
+                    } else {
+                      print('replace 8');
                       key.currentState.replaceItem(8, MyItem(index: 99));
                     }
                   },

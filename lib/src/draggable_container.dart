@@ -70,8 +70,7 @@ class DraggableContainerState<T extends DraggableItem>
     extends State<DraggableContainer<T>> with AboutRect {
   final Map<DraggableSlot<T>, DraggableWidget<T>?> _relationship = {};
 
-  List<T?> get items =>
-      _relationship.values.map((e) => e?.key.currentState?.item).toList();
+  List<T?> get items => _relationship.values.map((e) => e?.item).toList();
 
   late BeforeDropCallBack<T>? beforeDrop = widget.beforeDrop;
   late BeforeRemoveCallBack<T>? beforeRemove = widget.beforeRemove;
@@ -449,7 +448,7 @@ class DraggableContainerState<T extends DraggableItem>
     if (!canDrop) return;
     if (end - start == 1) {
       // 前后交换
-      print('前后位置交换： $start to $end');
+      // print('前后位置交换： $start to $end');
       _relationship[toSlot]?.key.currentState?.rect =
           _fromSlot!.key.currentState!.rect;
       _relationship[_fromSlot!] = _relationship[toSlot];
@@ -458,10 +457,10 @@ class DraggableContainerState<T extends DraggableItem>
       _relationship[_fromSlot!] = null;
       if (fromIndex == start) {
         // 从前往后拖动
-        // print('从前往后拖动： $start to $end $fromItem');
+        // print('从前往后拖动： $start to $end, ${_relationship[_fromSlot!]}');
         reorder(start: start, end: end);
       } else {
-        // print('从后往前拖动： $start to $end $fromItem');
+        // print('从后往前拖动： $start to $end, ${_relationship[_fromSlot!]}');
         reorder(start: start, end: end, reverse: true);
       }
     }
@@ -469,27 +468,22 @@ class DraggableContainerState<T extends DraggableItem>
   }
 
   void reorder({int start: 0, int end: -1, reverse: false}) {
-    var _items = this.items;
-    var entries = _relationship.entries.toList();
+    var slots = _relationship.keys.toList().getRange(start, end + 1).toList();
+    // print('revers: $reverse, total: ${slots.length}, from $start to $end');
     if (reverse) {
-      entries = entries.reversed.toList();
-      _items = _items.reversed.toList();
-      start = _items.length - end - 1;
-      end = _items.length - start;
+      slots = slots.reversed.toList();
     }
-    if (end == -1 || end > _items.length) end = _items.length;
-    print('reverse:$reverse, $start to $end');
-    for (var i = start; i < end; i++) {
-      final entry = entries[i];
-      final slot = entry.key;
-      final item = _items[i];
-      // print('i $i $item');
-      if (item == null) {
+    // print('after, from $start to $end');
+    for (var i = 0; i < slots.length; i++) {
+      final slot = slots[i];
+      final tile = _relationship[slot];
+      // print('i $i $tile');
+      if (tile == null) {
         int next = -1;
-        for (var j = i; j < (end + 1); j++) {
+        for (var j = i + 1; j < slots.length; j++) {
           // print('j $j');
-          if (j >= _items.length) break;
-          if (j == end || _items[j]?.fixed == false) {
+          final nextItem = _relationship[slots[j]]?.item;
+          if (j == (slots.length - 1) || nextItem?.fixed == false) {
             next = j;
             break;
           }
@@ -498,13 +492,10 @@ class DraggableContainerState<T extends DraggableItem>
         if (next == -1) {
           break;
         } else {
-          final nextSlot = _fromSlot = entries[next].key;
-          final nextItem = entries[next].value;
-          _relationship[slot] = nextItem;
-          _items[i] = _items[next];
-          _items[next] = null;
-          if (nextItem != null && nextItem != pickUp)
-            nextItem.key.currentState?.rect = slot.key.currentState!.rect;
+          final nextSlot = _fromSlot = slots[next];
+          final nextTile = _relationship[nextSlot];
+          _relationship[slot] = nextTile;
+          nextTile?.key.currentState?.rect = slot.key.currentState!.rect;
           _relationship[nextSlot] = null;
         }
       }
@@ -650,14 +641,15 @@ class DraggableContainerState<T extends DraggableItem>
       'Out of items range [${0}-${_relationship.length}]:$index',
     );
     final slot = _relationship.keys.elementAt(index);
+    print('replaceItem $slot ${_relationship[slot]?.item}');
     final child = _createItem(
         index: index, item: item, rect: slot.key.currentState!.rect);
     _relationship[slot] = child;
-    widget.onChanged?.call(items);
     if (mounted) {
       _updateSlots();
       setState(() {});
     }
+    widget.onChanged?.call(items);
   }
 
   int removeItem(T item) {
