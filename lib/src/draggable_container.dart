@@ -41,6 +41,7 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
   final BeforeRemoveCallBack<T>? beforeRemove;
   final BeforeDropCallBack<T>? beforeDrop;
   final bool? tapOutSideExitEditMode;
+  final bool? shrinkWrap;
   final BoxDecoration? draggingDecoration;
 
   const DraggableContainer({
@@ -56,6 +57,7 @@ class DraggableContainer<T extends DraggableItem> extends StatefulWidget {
     this.beforeRemove,
     this.beforeDrop,
     this.tapOutSideExitEditMode,
+    this.shrinkWrap,
     this.draggingDecoration,
     Duration? animationDuration,
   })  : animationDuration =
@@ -76,7 +78,16 @@ class DraggableContainerState<T extends DraggableItem>
   late BeforeRemoveCallBack<T>? beforeRemove = widget.beforeRemove;
 
   double layoutWidth = 0;
-  double _maxHeight = 0;
+  double _maxWidth = 0, _maxHeight = 0;
+
+  late bool _shrinkWrap = widget.shrinkWrap ?? false;
+
+  bool get shrinkWrap => _shrinkWrap;
+
+  set shrinkWrap(bool value) {
+    _shrinkWrap = value;
+    setState(() {});
+  }
 
   late final GestureRecognizerFactory _longPressRecognizer =
       GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
@@ -219,12 +230,14 @@ class DraggableContainerState<T extends DraggableItem>
   void _updateSlots() {
     final entries = _relationship.entries;
     late Rect rect;
+    _maxWidth = 0;
     for (var index = 0; index < entries.length; index++) {
       final entry = entries.elementAt(index);
       final slot = entry.key;
       final tile = entry.value;
       rect = calcSlotRect(index: index, layoutWidth: layoutWidth);
-      // print('更新槽 $index ${key.currentState}');
+      if (rect.right > _maxWidth) _maxWidth = rect.right;
+      print('更新槽 $index ${rect.right}');
       slot.key.currentState?.rect = rect;
       tile?.key.currentState?.rect = rect;
     }
@@ -528,24 +541,28 @@ class DraggableContainerState<T extends DraggableItem>
               });
             }
           }
-          // 容器高度
+          // 容器尺寸
           final height = constraints.maxHeight == double.infinity
               ? _maxHeight
               : constraints.maxHeight;
-          // print('容器高度 $height');
+          final width = _shrinkWrap ? _maxWidth : constraints.maxWidth;
           final _slots = _relationship.keys;
           final _tiles = _relationship.values
               .where((e) => e != null && e != pickUp)
               .map((e) => e!);
-          return Container(
-            height: height,
-            child: Stack(
-              key: _stackKey,
-              clipBehavior: Clip.none,
-              children: [
-                ..._slots,
-                ..._tiles,
-              ],
+          return Center(
+            child: Container(
+              width: width,
+              height: height,
+              color: Colors.red,
+              child: Stack(
+                key: _stackKey,
+                clipBehavior: Clip.none,
+                children: [
+                  ..._slots,
+                  ..._tiles,
+                ],
+              ),
             ),
           );
         },

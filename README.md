@@ -37,6 +37,9 @@
     - required SliverGirdDelegate gridDelegate
         - 布局依赖于gridDelegate。
         - The layout depends on the gridDelegate.
+    - bool? shrinkWrap
+        - 紧缩水平宽度大小，方便水平居中，默认为false。
+        - Shrink the horizontal size, default is false.
     - Widget? NullableItemBuilder\<T extends DraggableItem\>(BuildContext context, T? item) deleteButtonBuilder
         - 子项删除按钮的构建器。
         - The delete button builder for the item.

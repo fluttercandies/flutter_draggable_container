@@ -147,109 +147,113 @@ class _MyHomePage extends State<MyHomePage> {
             subtitle: Text(delegate),
           ),
           Divider(height: 1),
-          DraggableContainer<DraggableItem>(
-            key: key,
-            items: data,
-            beforeRemove: beforeRemove,
-            draggingDecoration: BoxDecoration(boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 5,
-                offset: Offset(0, 5),
+          Align(
+            alignment: Alignment.center,
+            child: DraggableContainer<DraggableItem>(
+              key: key,
+              items: data,
+              shrinkWrap: true,
+              beforeRemove: beforeRemove,
+              draggingDecoration: BoxDecoration(boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 5,
+                  offset: Offset(0, 5),
+                ),
+              ]),
+              // gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              //   crossAxisCount: 3,
+              //   crossAxisSpacing: 10,
+              //   mainAxisSpacing: 10,
+              // ),
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 150,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
               ),
-            ]),
-            // gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            //   crossAxisCount: 3,
-            //   crossAxisSpacing: 10,
-            //   mainAxisSpacing: 10,
-            // ),
-            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 150,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-            ),
-            padding: EdgeInsets.all(10),
-            onChanged: (List<DraggableItem> items) {
-              final addItem = items.firstWhere(
-                (item) => item is AddItem,
-                orElse: () => null,
-              );
-              // print('has AddItem ${addItem != null}');
-              if (items.length < 9 && addItem == null)
-                key.currentState.addSlot(AddItem());
-              setState(() {});
-            },
-            beforeDrop: ({fromItem, fromSlotIndex, toItem, toSlotIndex}) {
-              // print('beforeDrop from $fromSlotIndex to $toSlotIndex');
-              /// will override the toItem.fixed property
-              return Future.value(true);
-            },
-            itemBuilder: (_, DraggableItem item) {
-              if (item is AddItem) {
-                return ElevatedButton(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Add',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      Icon(
-                        Icons.add,
-                        color: Colors.white,
-                      ),
-                    ],
-                  ),
-                  onPressed: () {
-                    if (key.currentState.slots.length < 9) {
-                      key.currentState.insertSlot(
-                          0,
-                          MyItem(
-                            index: key.currentState.slots.length,
-                          ));
-                    } else {
-                      print('replace 8');
-                      key.currentState.replaceItem(8, MyItem(index: 99));
-                    }
-                  },
+              padding: EdgeInsets.all(10),
+              onChanged: (List<DraggableItem> items) {
+                final addItem = items.firstWhere(
+                  (item) => item is AddItem,
+                  orElse: () => null,
                 );
-              } else if (item is MyItem) {
-                return Material(
-                  elevation: 0,
-                  borderOnForeground: false,
-                  child: Container(
-                    color: item.color,
+                // print('has AddItem ${addItem != null}');
+                if (items.length < 9 && addItem == null)
+                  key.currentState.addSlot(AddItem());
+                setState(() {});
+              },
+              beforeDrop: ({fromItem, fromSlotIndex, toItem, toSlotIndex}) {
+                // print('beforeDrop from $fromSlotIndex to $toSlotIndex');
+                /// will override the toItem.fixed property
+                return Future.value(true);
+              },
+              itemBuilder: (_, DraggableItem item) {
+                if (item is AddItem) {
+                  return ElevatedButton(
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          item.index.toString(),
-                          style: TextStyle(
-                            fontSize: 22,
-                            color: Colors.white,
-                            shadows: [
-                              BoxShadow(color: Colors.black, blurRadius: 5),
-                            ],
-                          ),
+                          'Add',
+                          style: TextStyle(color: Colors.white),
                         ),
-                        SizedBox(height: 5),
-                        ElevatedButton.icon(
-                          icon: Icon(item.fixed
-                              ? Icons.lock_outline
-                              : Icons.lock_open),
-                          label: Text(item.fixed ? 'Unlock' : 'Lock'),
-                          onPressed: () {
-                            item.fixed = !item.fixed;
-                            setState(() {});
-                          },
+                        Icon(
+                          Icons.add,
+                          color: Colors.white,
                         ),
                       ],
                     ),
-                  ),
-                );
-              }
-              return null;
-            },
+                    onPressed: () {
+                      if (key.currentState.slots.length < 9) {
+                        key.currentState.insertSlot(
+                            0,
+                            MyItem(
+                              index: key.currentState.slots.length,
+                            ));
+                      } else {
+                        print('replace 8');
+                        key.currentState.replaceItem(8, MyItem(index: 99));
+                      }
+                    },
+                  );
+                } else if (item is MyItem) {
+                  return Material(
+                    elevation: 0,
+                    borderOnForeground: false,
+                    child: Container(
+                      color: item.color,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            item.index.toString(),
+                            style: TextStyle(
+                              fontSize: 22,
+                              color: Colors.white,
+                              shadows: [
+                                BoxShadow(color: Colors.black, blurRadius: 5),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 5),
+                          ElevatedButton.icon(
+                            icon: Icon(item.fixed
+                                ? Icons.lock_outline
+                                : Icons.lock_open),
+                            label: Text(item.fixed ? 'Unlock' : 'Lock'),
+                            onPressed: () {
+                              item.fixed = !item.fixed;
+                              setState(() {});
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                return null;
+              },
+            ),
           ),
           Divider(height: 1),
           ListTile(
