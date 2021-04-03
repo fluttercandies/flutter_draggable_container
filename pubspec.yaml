@@ -3,7 +3,7 @@ description:
   A Very Smooth Draggable Widget Container.
   Each children is Draggable, Deletable and Fixable.
   Support SliverGridDelegate!
-version: 1.0.7+1
+version: 1.0.7+2
 homepage: https://github.com/gzlock/flutter_draggable_container
 repository: https://github.com/gzlock/flutter_draggable_container
 

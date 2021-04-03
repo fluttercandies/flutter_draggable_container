@@ -237,7 +237,7 @@ class DraggableContainerState<T extends DraggableItem>
       final tile = entry.value;
       rect = calcSlotRect(index: index, layoutWidth: layoutWidth);
       if (rect.right > _maxWidth) _maxWidth = rect.right;
-      print('更新槽 $index ${rect.right}');
+      // print('更新槽 $index ${rect.right}');
       slot.key.currentState?.rect = rect;
       tile?.key.currentState?.rect = rect;
     }

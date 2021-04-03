@@ -1,4 +1,7 @@
-### [1.0.7]
+### [1.0.7+2]
+Fixed some issues.
+
+### [1.0.7+1]
 Fixed some issues.
 
 ### [1.0.7]
