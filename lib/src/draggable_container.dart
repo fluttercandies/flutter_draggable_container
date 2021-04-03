@@ -554,7 +554,6 @@ class DraggableContainerState<T extends DraggableItem>
             child: Container(
               width: width,
               height: height,
-              color: Colors.red,
               child: Stack(
                 key: _stackKey,
                 clipBehavior: Clip.none,

@@ -1,4 +1,7 @@
 ### [1.0.7]
+Fixed some issues.
+
+### [1.0.7]
 Add the attribute name of 'shrinkWrap' for shrink the horizontal size.
 
 ### [1.0.6]
